@@ -65,10 +65,24 @@
             text-align: left;
             color: #ffd700;
             border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
         }
-        .coins-table td { padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .coins-table td { 
+            padding: 1rem; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            font-weight: normal;
+        }
         .coins-table tr:hover { background: rgba(255, 255, 255, 0.05); }
-        .coin-name { font-size: 1.1rem; font-weight: bold; color: #ffd700; }
+        .coin-name { 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: #ffd700; 
+            font-family: 'Segoe UI', sans-serif;
+        }
         .status {
             padding: 4px 8px;
             border-radius: 6px;
@@ -81,11 +95,24 @@
         .status.connected { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
         .status.disconnected { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
         .status.connecting { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
-        .price { font-size: 1.3rem; font-weight: bold; font-family: monospace; }
-        .price.up { color: #00ff88; }
-        .price.down { color: #ff4757; }
-        .change-positive { color: #00ff88; font-weight: bold; }
-        .change-negative { color: #ff4757; font-weight: bold; }
+        .price { 
+            font-size: 14px; 
+            font-weight: normal; 
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+        }
+        .change-positive { 
+            color: #00ff88; 
+            font-weight: normal;
+            font-size: 14px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .change-negative { 
+            color: #ff4757; 
+            font-weight: normal;
+            font-size: 14px;
+            font-family: 'Segoe UI', sans-serif;
+        }
         .remove-btn {
             background: linear-gradient(45deg, #ff4757, #c44569);
             padding: 6px 12px;
@@ -95,7 +122,12 @@
             color: white;
             cursor: pointer;
         }
-        .numeric-cell { text-align: right; font-family: monospace; }
+        .numeric-cell { 
+            text-align: right; 
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            font-weight: normal;
+        }
         .no-coins { text-align: center; padding: 3rem; opacity: 0.7; font-size: 1.2rem; }
         .sortable { cursor: pointer; user-select: none; position: relative; }
         .sortable:hover { background: rgba(255, 255, 255, 0.2); }
@@ -207,8 +239,6 @@
                     if (priceEl) {
                         priceEl.textContent = formatPrice(d.c);
                         priceEl.className = 'price';
-                        if (price > coins[s].last) priceEl.classList.add('up');
-                        else if (price < coins[s].last) priceEl.classList.add('down');
                     }
 
                     const changeEl = $(`change-${s}`);
