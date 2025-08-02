@@ -297,6 +297,7 @@
             const tbody = $('tbody');
             if (!tbody) return;
 
+            // Sıralama yönünü belirle
             if (sortData.col === col) {
                 sortData.dir = sortData.dir === 'asc' ? 'desc' : 'asc';
             } else {
@@ -304,47 +305,68 @@
                 sortData.dir = 'asc';
             }
 
+            // Başlık stillerini temizle
             document.querySelectorAll('.sortable').forEach(th => {
                 th.classList.remove('asc', 'desc');
             });
 
-            document.querySelectorAll('.sortable').forEach(th => {
-                if (th.onclick && th.onclick.toString().includes(col)) {
+            // Aktif başlığı işaretle
+            const headers = document.querySelectorAll('.sortable');
+            headers.forEach(th => {
+                const onclick = th.getAttribute('onclick');
+                if (onclick && onclick.includes(`'${col}'`)) {
                     th.classList.add(sortData.dir);
                 }
             });
 
-            const rows = Array.from(tbody.querySelectorAll('tr'));
+            // Satırları al ve sırala
+            const rows = Array.from(tbody.children);
             
-            rows.sort((a, b) => {
-                let vA, vB;
+            rows.sort((rowA, rowB) => {
+                let valueA, valueB;
                 
+                // Coin ismi için string karşılaştırma
                 if (col === 'coin') {
-                    vA = a.cells[0].textContent.trim();
-                    vB = b.cells[0].textContent.trim();
-                    const result = vA.localeCompare(vB);
+                    valueA = rowA.cells[0].textContent.trim();
+                    valueB = rowB.cells[0].textContent.trim();
+                    const result = valueA.localeCompare(valueB);
                     return sortData.dir === 'asc' ? result : -result;
                 }
                 
-                const colMap = { price: 2, change: 3, funding: 4, high: 5, low: 6, vol: 7 };
-                const idx = colMap[col];
+                // Diğer sütunlar için sayısal karşılaştırma
+                let cellIndex;
+                switch(col) {
+                    case 'price': cellIndex = 2; break;
+                    case 'change': cellIndex = 3; break;
+                    case 'funding': cellIndex = 4; break;
+                    case 'high': cellIndex = 5; break;
+                    case 'low': cellIndex = 6; break;
+                    case 'vol': cellIndex = 7; break;
+                    default: return 0;
+                }
                 
-                vA = parseFloat(a.cells[idx].textContent.replace(/[\$,%\+MK]/g, '')) || 0;
-                vB = parseFloat(b.cells[idx].textContent.replace(/[\$,%\+MK]/g, '')) || 0;
+                // Hücre değerlerini al ve temizle
+                const textA = rowA.cells[cellIndex].textContent.trim();
+                const textB = rowB.cells[cellIndex].textContent.trim();
                 
+                // Sayısal değerleri çıkar
+                valueA = parseFloat(textA.replace(/[\$,+%]/g, '')) || 0;
+                valueB = parseFloat(textB.replace(/[\$,+%]/g, '')) || 0;
+                
+                // Hacim için özel işlem (K, M birimleri)
                 if (col === 'vol') {
-                    const tA = a.cells[idx].textContent;
-                    const tB = b.cells[idx].textContent;
-                    if (tA.includes('M')) vA *= 1000000;
-                    if (tA.includes('K')) vA *= 1000;
-                    if (tB.includes('M')) vB *= 1000000;
-                    if (tB.includes('K')) vB *= 1000;
+                    if (textA.includes('M')) valueA *= 1000000;
+                    else if (textA.includes('K')) valueA *= 1000;
+                    if (textB.includes('M')) valueB *= 1000000;
+                    else if (textB.includes('K')) valueB *= 1000;
                 }
 
-                const result = vA - vB;
+                // Karşılaştırma sonucu
+                const result = valueA - valueB;
                 return sortData.dir === 'asc' ? result : -result;
             });
 
+            // Sıralanmış satırları tabloya geri yerleştir
             tbody.innerHTML = '';
             rows.forEach(row => tbody.appendChild(row));
         }
