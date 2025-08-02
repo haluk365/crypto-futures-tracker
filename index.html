@@ -44,7 +44,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.0</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.1</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="add()">Ekle</button>
@@ -153,13 +153,32 @@
         }
         
         function add(){
-            let s=$('inp').value.trim().toUpperCase();
-            if(!s)return alert('Lütfen bir coin adı girin!');
-            if(!s.endsWith('USDT'))s+='USDT';
-            if(c[s])return alert(`${s} zaten takip ediliyor!`);
-            if(Object.keys(c).length>=20)return alert('Maksimum 20 coin takip edebilirsiniz!');
-            c[s]={w:null,l:0};up();cn(s);sv();$('inp').value='';
-            if(Object.keys(c).length===1)lc(s);
+            const inp = $('inp');
+            if(!inp) {
+                alert('Input kutusu bulunamadı!');
+                return;
+            }
+            let s = inp.value.trim().toUpperCase();
+            console.log('Girilen coin:', s); // Debug için
+            if(!s) return alert('Lütfen bir coin adı girin!');
+            if(!s.endsWith('USDT')) s += 'USDT';
+            console.log('Son coin adı:', s); // Debug için
+            if(c[s]) return alert(`${s} zaten takip ediliyor!`);
+            if(Object.keys(c).length >= 20) return alert('Maksimum 20 coin takip edebilirsiniz!');
+            
+            try {
+                c[s] = {w: null, l: 0};
+                console.log('Coin objesi oluşturuldu:', c[s]); // Debug için
+                up();
+                cn(s);
+                sv();
+                inp.value = '';
+                if(Object.keys(c).length === 1) lc(s);
+                console.log('Coin başarıyla eklendi!'); // Debug için
+            } catch(error) {
+                console.error('Coin ekleme hatası:', error);
+                alert('Coin eklenirken hata oluştu!');
+            }
         }
         
         function rm(s){
