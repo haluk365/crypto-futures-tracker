@@ -130,8 +130,15 @@
             if(c[s]){c[s].w?.close();delete c[s];$(`r${s}`).remove();sv();if(!Object.keys(c).length)up()}
         }
         
-        $('inp').onkeypress=e=>e.key==='Enter'&&add();
-        window.onload=()=>ld()&&(up(),Object.keys(c).forEach(cn));
+        // Input focus ve klavye event'lerini düzelt
+        window.onload=()=>{
+            const inp=$('inp');
+            if(inp){
+                inp.focus();
+                inp.onkeypress=e=>e.key==='Enter'&&add();
+            }
+            if(ld()){up();Object.keys(c).forEach(cn)}
+        };
         window.onbeforeunload=()=>Object.values(c).forEach(c=>c.w?.close());
     </script>
 </body>
