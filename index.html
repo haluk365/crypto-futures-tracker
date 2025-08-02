@@ -105,25 +105,17 @@
             min-width: 200px;
         }
 
-        .crypto-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-        }
-
-        .crypto-card {
+        .table-container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
-            padding: 25px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.2);
-            transition: all 0.3s ease;
-            position: relative;
             overflow: hidden;
+            position: relative;
         }
 
-        .crypto-card::before {
+        .table-container::before {
             content: '';
             position: absolute;
             top: 0;
@@ -133,86 +125,119 @@
             background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
         }
 
-        .crypto-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        .crypto-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
         }
 
-        .crypto-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .crypto-symbol {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .remove-btn {
-            background: #ff4757;
+        .crypto-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            padding: 20px 15px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 1.1rem;
             border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            font-size: 1.2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
         }
 
-        .price-section {
-            margin-bottom: 20px;
+        .crypto-table th:first-child {
+            border-radius: 0;
         }
 
-        .price {
-            font-size: 2.2rem;
+        .crypto-table th:last-child {
+            border-radius: 0;
+        }
+
+        .crypto-table td {
+            padding: 18px 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .crypto-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .crypto-table tbody tr:hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            transform: scale(1.01);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .symbol-cell {
+            font-size: 1.3rem;
             font-weight: bold;
             color: #2c3e50;
-            margin-bottom: 5px;
         }
 
-        .change {
-            font-size: 1.1rem;
+        .price-cell {
+            font-size: 1.4rem;
             font-weight: bold;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+        }
+
+        .change-cell {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .change-positive {
+            color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
             padding: 6px 12px;
             border-radius: 15px;
             display: inline-block;
         }
 
-        .change.positive {
-            background: #d4edda;
-            color: #155724;
+        .change-negative {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 6px 12px;
+            border-radius: 15px;
+            display: inline-block;
         }
 
-        .change.negative {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .funding-section {
-            border-top: 2px solid #eee;
-            padding-top: 15px;
-        }
-
-        .funding-title {
-            font-size: 1rem;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .funding-rate {
-            font-size: 1.4rem;
+        .funding-cell {
             font-weight: bold;
+            font-size: 1.1rem;
+            font-family: 'Courier New', monospace;
         }
 
-        .funding-rate.positive {
+        .funding-positive {
             color: #27ae60;
         }
 
-        .funding-rate.negative {
+        .funding-negative {
             color: #e74c3c;
+        }
+
+        .remove-btn {
+            background: linear-gradient(45deg, #ff4757, #ff3742);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+        }
+
+        .remove-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2rem;
+            font-style: italic;
         }
 
         .loading {
@@ -235,13 +260,32 @@
                 font-size: 2rem;
             }
             
-            .crypto-grid {
-                grid-template-columns: 1fr;
-            }
-            
             .controls {
                 flex-direction: column;
                 align-items: center;
+            }
+            
+            .crypto-table {
+                font-size: 0.9rem;
+            }
+            
+            .crypto-table th,
+            .crypto-table td {
+                padding: 12px 8px;
+            }
+            
+            .symbol-cell {
+                font-size: 1.1rem;
+            }
+            
+            .price-cell {
+                font-size: 1.2rem;
+            }
+            
+            .remove-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
             }
         }
     </style>
@@ -266,8 +310,24 @@
 
         <div id="errorMsg" class="error-msg" style="display: none;"></div>
         
-        <div class="crypto-grid" id="cryptoGrid">
-            <!-- Kripto kartları buraya eklenecek -->
+        <div class="table-container">
+            <table class="crypto-table" id="cryptoTable">
+                <thead>
+                    <tr>
+                        <th>📊 Sembol</th>
+                        <th>💰 Fiyat (USDT)</th>
+                        <th>📈 24s Değişim</th>
+                        <th>⚡ Funding Rate</th>
+                        <th>🗑️ İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="cryptoTableBody">
+                    <!-- Veriler buraya eklenecek -->
+                </tbody>
+            </table>
+            <div id="noDataMessage" class="no-data" style="display: none;">
+                Henüz takip edilen futures coin yok. Yukarıdan coin ekleyin! 📈
+            </div>
         </div>
     </div>
 
@@ -404,7 +464,7 @@
                     }
                 });
                 
-                updateAllCards();
+                updateAllRows();
             } catch (error) {
                 console.error('Funding rate alınırken hata:', error);
             }
@@ -418,7 +478,7 @@
                 volume: parseFloat(ticker.v)
             };
             
-            updateCryptoCard(ticker.s);
+            updateCryptoRow(ticker.s);
         }
 
         function addSymbol() {
@@ -447,7 +507,7 @@
 
         function addSymbolToTrack(symbol) {
             subscribedSymbols.add(symbol);
-            createCryptoCard(symbol);
+            createCryptoRow(symbol);
             
             // Funding rate verilerini güncelle
             setTimeout(() => {
@@ -460,37 +520,36 @@
             delete cryptoData[symbol];
             delete fundingRates[symbol];
             
-            const card = document.getElementById(`card-${symbol}`);
-            if (card) {
-                card.remove();
+            const row = document.getElementById(`row-${symbol}`);
+            if (row) {
+                row.remove();
             }
+            
+            updateNoDataMessage();
         }
 
-        function createCryptoCard(symbol) {
-            const grid = document.getElementById('cryptoGrid');
-            const card = document.createElement('div');
-            card.className = 'crypto-card';
-            card.id = `card-${symbol}`;
+        function createCryptoRow(symbol) {
+            const tbody = document.getElementById('cryptoTableBody');
+            const row = document.createElement('tr');
+            row.id = `row-${symbol}`;
             
-            card.innerHTML = `
-                <div class="crypto-header">
-                    <div class="crypto-symbol">${symbol}</div>
+            row.innerHTML = `
+                <td class="symbol-cell">${symbol}</td>
+                <td class="price-cell" id="price-${symbol}">--</td>
+                <td class="change-cell" id="change-${symbol}">
+                    <span class="change-positive">--%</span>
+                </td>
+                <td class="funding-cell" id="funding-${symbol}">--</td>
+                <td>
                     <button class="remove-btn" onclick="removeSymbol('${symbol}')" title="Kaldır">×</button>
-                </div>
-                <div class="price-section">
-                    <div class="price" id="price-${symbol}">--</div>
-                    <div class="change" id="change-${symbol}">--%</div>
-                </div>
-                <div class="funding-section">
-                    <div class="funding-title">Funding Rate</div>
-                    <div class="funding-rate" id="funding-${symbol}">--</div>
-                </div>
+                </td>
             `;
             
-            grid.appendChild(card);
+            tbody.appendChild(row);
+            updateNoDataMessage();
         }
 
-        function updateCryptoCard(symbol) {
+        function updateCryptoRow(symbol) {
             const data = cryptoData[symbol];
             if (!data) return;
 
@@ -498,33 +557,47 @@
             const changeEl = document.getElementById(`change-${symbol}`);
             
             if (priceEl) {
-                priceEl.textContent = `$${data.price.toLocaleString('en-US', {
+                priceEl.textContent = `${data.price.toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: data.price < 1 ? 6 : 2
                 })}`;
             }
             
             if (changeEl) {
-                changeEl.textContent = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
-                changeEl.className = `change ${data.change >= 0 ? 'positive' : 'negative'}`;
+                const changeValue = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
+                changeEl.innerHTML = `<span class="${data.change >= 0 ? 'change-positive' : 'change-negative'}">${changeValue}</span>`;
             }
 
-            updateFundingRate(symbol);
+            updateFundingRateRow(symbol);
         }
 
-        function updateFundingRate(symbol) {
+        function updateFundingRateRow(symbol) {
             const fundingEl = document.getElementById(`funding-${symbol}`);
             const funding = fundingRates[symbol];
             
             if (fundingEl && funding) {
                 fundingEl.textContent = `${funding.rate >= 0 ? '+' : ''}${funding.rate.toFixed(4)}%`;
-                fundingEl.className = `funding-rate ${funding.rate >= 0 ? 'positive' : 'negative'}`;
+                fundingEl.className = `funding-cell ${funding.rate >= 0 ? 'funding-positive' : 'funding-negative'}`;
             }
         }
 
-        function updateAllCards() {
+        function updateNoDataMessage() {
+            const tbody = document.getElementById('cryptoTableBody');
+            const noDataMsg = document.getElementById('noDataMessage');
+            const table = document.getElementById('cryptoTable');
+            
+            if (tbody.children.length === 0) {
+                table.style.display = 'none';
+                noDataMsg.style.display = 'block';
+            } else {
+                table.style.display = 'table';
+                noDataMsg.style.display = 'none';
+            }
+        }
+
+        function updateAllRows() {
             subscribedSymbols.forEach(symbol => {
-                updateCryptoCard(symbol);
+                updateCryptoRow(symbol);
             });
         }
 
@@ -537,6 +610,7 @@
         // Sayfa yüklendiğinde otomatik bağlan
         window.onload = function() {
             connectWebSocket();
+            updateNoDataMessage();
             
             // Her 5 dakikada bir funding rate verilerini güncelle
             setInterval(fetchFundingRates, 5 * 60 * 1000);
