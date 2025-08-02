@@ -44,7 +44,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.3</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.4</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="addCoin()">Ekle</button>
@@ -63,36 +63,109 @@
     </div>
 
     <script>
-        let c={},s={col:null,dir:'asc'};
-        const $=i=>document.getElementById(i);
-        const fp=p=>{const n=+p;return '$'+(n>=1?n.toFixed(2):n>=0.01?n.toFixed(4):n.toFixed(8))};
-        const fn=n=>n>=1e6?(n/1e6).toFixed(2)+'M':n>=1000?(n/1000).toFixed(2)+'K':(+n).toFixed(2);
-        const ff=r=>r?((+r*100).toFixed(4)>=0?'+':'')+(+r*100).toFixed(4)+'%':'-';
+        let c = {};
+        let s = {col: null, dir: 'asc'};
         
-        const gf=async s=>{try{const r=await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${s}`);return(await r.json()).lastFundingRate}catch{return null}};
-        const sv=()=>localStorage.setItem('c',JSON.stringify(Object.keys(c)));
-        const ld=()=>{const d=localStorage.getItem('c');if(d){JSON.parse(d).forEach(s=>c[s]={w:null,l:0});return Object.keys(c).length>0}return false};
-        const st=(s,m,t)=>{const e=$(`s${s}`);if(e){e.textContent=m;e.className=`status ${t}`}};
+        const $ = i => document.getElementById(i);
+        const fp = p => {
+            const n = +p;
+            return '$' + (n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(4) : n.toFixed(8));
+        };
+        const fn = n => n >= 1e6 ? (n/1e6).toFixed(2) + 'M' : n >= 1000 ? (n/1000).toFixed(2) + 'K' : (+n).toFixed(2);
+        const ff = r => r ? ((+r * 100).toFixed(4) >= 0 ? '+' : '') + (+r * 100).toFixed(4) + '%' : '-';
         
-        const up=()=>{
-            const ct=$('cont');
-            if(!Object.keys(c).length){
-                ct.innerHTML='<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
-            }else{
-                if(!$('tb'))ct.innerHTML=`<table><thead><tr><th class="sortable" onclick="sortBy('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sortBy('price')">Fiyat</th><th class="sortable" onclick="sortBy('change')">24s %</th><th class="sortable" onclick="sortBy('funding')">Fund</th><th class="sortable" onclick="sortBy('high')">24s Yüksek</th><th class="sortable" onclick="sortBy('low')">24s Düşük</th><th class="sortable" onclick="sortBy('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
-                const tb=$('tb');
-                Object.keys(c).forEach(s=>{
-                    if(!$(`r${s}`))tb.innerHTML+=`<tr id="r${s}"><td><div class="coin-name" onclick="lc('${s}')" style="cursor:pointer;text-decoration:underline">${s}</div></td><td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td><td class="numeric-cell"><div id="p${s}">$0.00</div></td><td class="numeric-cell" id="h${s}">-</td><td class="numeric-cell" id="f${s}">-</td><td class="numeric-cell" id="i${s}">-</td><td class="numeric-cell" id="o${s}">-</td><td class="numeric-cell" id="v${s}">-</td><td><button class="remove-btn" onclick="rm('${s}')">Kaldır</button></td></tr>`
+        const gf = async s => {
+            try {
+                const r = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${s}`);
+                return (await r.json()).lastFundingRate;
+            } catch {
+                return null;
+            }
+        };
+        
+        const sv = () => localStorage.setItem('c', JSON.stringify(Object.keys(c)));
+        const ld = () => {
+            const d = localStorage.getItem('c');
+            if (d) {
+                JSON.parse(d).forEach(s => c[s] = {w: null, l: 0});
+                return Object.keys(c).length > 0;
+            }
+            return false;
+        };
+        
+        const st = (s, m, t) => {
+            const e = $(`s${s}`);
+            if (e) {
+                e.textContent = m;
+                e.className = `status ${t}`;
+            }
+        };
+        
+        const up = () => {
+            const ct = $('cont');
+            if (!Object.keys(c).length) {
+                ct.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
+            } else {
+                if (!$('tb')) {
+                    ct.innerHTML = `<table><thead><tr><th class="sortable" onclick="sortBy('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sortBy('price')">Fiyat</th><th class="sortable" onclick="sortBy('change')">24s %</th><th class="sortable" onclick="sortBy('funding')">Fund</th><th class="sortable" onclick="sortBy('high')">24s Yüksek</th><th class="sortable" onclick="sortBy('low')">24s Düşük</th><th class="sortable" onclick="sortBy('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
+                }
+                const tb = $('tb');
+                Object.keys(c).forEach(s => {
+                    if (!$(`r${s}`)) {
+                        tb.innerHTML += `<tr id="r${s}"><td><div class="coin-name" onclick="loadChart('${s}')" style="cursor:pointer;text-decoration:underline">${s}</div></td><td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td><td class="numeric-cell"><div id="p${s}">$0.00</div></td><td class="numeric-cell" id="h${s}">-</td><td class="numeric-cell" id="f${s}">-</td><td class="numeric-cell" id="i${s}">-</td><td class="numeric-cell" id="o${s}">-</td><td class="numeric-cell" id="v${s}">-</td><td><button class="remove-btn" onclick="removeCoin('${s}')">Kaldır</button></td></tr>`;
+                    }
                 });
             }
-        const cn=s=>{
+        };
         
-        const lc=s=>{
-            const w=$('tradingview-widget');
-            if(!w)return;
-            w.innerHTML=`<div style="text-align:center;padding:50px 0;opacity:0.7;">📈 ${s} grafiği yükleniyor...</div>`;
-            setTimeout(()=>{
-                w.innerHTML=`<div class="tradingview-widget-container" style="height:100%;width:100%">
+        const cn = s => {
+            const w = new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
+            c[s].w = w;
+            
+            gf(s).then(r => {
+                const e = $(`f${s}`);
+                if (e) {
+                    e.textContent = ff(r);
+                    e.className = `numeric-cell ${(+r || 0) >= 0 ? 'change-positive' : 'change-negative'}`;
+                }
+            });
+            
+            w.onopen = () => st(s, 'Bağlı', 'connected');
+            w.onerror = () => st(s, 'Hata', 'disconnected');
+            w.onclose = () => st(s, 'Kesildi', 'disconnected');
+            
+            w.onmessage = e => {
+                try {
+                    const d = JSON.parse(e.data);
+                    const pe = $(`p${s}`);
+                    const he = $(`h${s}`);
+                    const ie = $(`i${s}`);
+                    const oe = $(`o${s}`);
+                    const ve = $(`v${s}`);
+                    
+                    if (pe) pe.textContent = fp(d.c);
+                    if (he) {
+                        const ch = +d.P;
+                        he.textContent = `${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%`;
+                        he.className = `numeric-cell ${ch >= 0 ? 'change-positive' : 'change-negative'}`;
+                    }
+                    if (ie) ie.textContent = fp(d.h);
+                    if (oe) oe.textContent = fp(d.l);
+                    if (ve) ve.textContent = fn(d.v);
+                    
+                    c[s].l = +d.c;
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+        };
+        
+        function loadChart(s) {
+            const w = $('tradingview-widget');
+            if (!w) return;
+            w.innerHTML = `<div style="text-align:center;padding:50px 0;opacity:0.7;">📈 ${s} grafiği yükleniyor...</div>`;
+            setTimeout(() => {
+                w.innerHTML = `<div class="tradingview-widget-container" style="height:100%;width:100%">
                     <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
                     {
@@ -114,90 +187,100 @@
                     }
                     <\/script>
                 </div>`;
-            },500);
-        };
-            const w=new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
-            c[s].w=w;
-            gf(s).then(r=>{const e=$(`f${s}`);if(e){e.textContent=ff(r);e.className=`numeric-cell ${(+r||0)>=0?'change-positive':'change-negative'}`}});
-            w.onopen=()=>st(s,'Bağlı','connected');
-            w.onerror=()=>st(s,'Hata','disconnected');
-            w.onclose=()=>st(s,'Kesildi','disconnected');
-            w.onmessage=e=>{
-                try{
-                    const d=JSON.parse(e.data);
-                    const pe=$(`p${s}`),he=$(`h${s}`),ie=$(`i${s}`),oe=$(`o${s}`),ve=$(`v${s}`);
-                    if(pe)pe.textContent=fp(d.c);
-                    if(he){const ch=+d.P;he.textContent=`${ch>=0?'+':''}${ch.toFixed(2)}%`;he.className=`numeric-cell ${ch>=0?'change-positive':'change-negative'}`}
-                    if(ie)ie.textContent=fp(d.h);
-                    if(oe)oe.textContent=fp(d.l);
-                    if(ve)ve.textContent=fn(d.v);
-                    c[s].l=+d.c;
-                }catch(err){console.error(err)}
-            };
-        };
-        
-        function sb(col){
-            const tb=$('tb');if(!tb)return;
-            s.dir=s.col===col?(s.dir==='asc'?'desc':'asc'):'asc';s.col=col;
-            document.querySelectorAll('.sortable').forEach(th=>th.classList.remove('asc','desc'));
-            document.querySelectorAll('.sortable').forEach(th=>{if(th.getAttribute('onclick')?.includes(`'${col}'`))th.classList.add(s.dir)});
-            const rs=Array.from(tb.children);
-            const ci={price:2,change:3,funding:4,high:5,low:6,vol:7}[col];
-            rs.sort((a,b)=>{
-                if(col==='coin'){const r=a.cells[0].textContent.trim().localeCompare(b.cells[0].textContent.trim());return s.dir==='asc'?r:-r}
-                let vA=+(a.cells[ci].textContent.replace(/[\$,+%]/g,'')||0);let vB=+(b.cells[ci].textContent.replace(/[\$,+%]/g,'')||0);
-                if(col==='vol'){const tA=a.cells[ci].textContent,tB=b.cells[ci].textContent;if(tA.includes('M'))vA*=1e6;else if(tA.includes('K'))vA*=1000;if(tB.includes('M'))vB*=1e6;else if(tB.includes('K'))vB*=1000}
-                return s.dir==='asc'?vA-vB:vB-vA;
-            });
-            tb.innerHTML='';rs.forEach(row=>tb.appendChild(row));
+            }, 500);
         }
         
-        function add(){
+        function addCoin() {
             const inp = $('inp');
-            if(!inp) {
+            if (!inp) {
                 alert('Input kutusu bulunamadı!');
                 return;
             }
-            let s = inp.value.trim().toUpperCase();
-            console.log('Girilen coin:', s); // Debug için
-            if(!s) return alert('Lütfen bir coin adı girin!');
-            if(!s.endsWith('USDT')) s += 'USDT';
-            console.log('Son coin adı:', s); // Debug için
-            if(c[s]) return alert(`${s} zaten takip ediliyor!`);
-            if(Object.keys(c).length >= 20) return alert('Maksimum 20 coin takip edebilirsiniz!');
+            let symbol = inp.value.trim().toUpperCase();
+            console.log('Girilen coin:', symbol);
+            if (!symbol) return alert('Lütfen bir coin adı girin!');
+            if (!symbol.endsWith('USDT')) symbol += 'USDT';
+            console.log('Son coin adı:', symbol);
+            if (c[symbol]) return alert(`${symbol} zaten takip ediliyor!`);
+            if (Object.keys(c).length >= 20) return alert('Maksimum 20 coin takip edebilirsiniz!');
             
             try {
-                c[s] = {w: null, l: 0};
-                console.log('Coin objesi oluşturuldu:', c[s]); // Debug için
+                c[symbol] = {w: null, l: 0};
+                console.log('Coin objesi oluşturuldu:', c[symbol]);
                 up();
-                cn(s);
+                cn(symbol);
                 sv();
                 inp.value = '';
-                if(Object.keys(c).length === 1) loadChart(s);
-                console.log('Coin başarıyla eklendi!'); // Debug için
-            } catch(error) {
+                if (Object.keys(c).length === 1) loadChart(symbol);
+                console.log('Coin başarıyla eklendi!');
+            } catch (error) {
                 console.error('Coin ekleme hatası:', error);
                 alert('Coin eklenirken hata oluştu!');
             }
         }
         
-        function rm(s){
-            if(c[s]){c[s].w?.close();delete c[s];$(`r${s}`).remove();sv();if(!Object.keys(c).length)up()}
+        function removeCoin(s) {
+            if (c[s]) {
+                c[s].w?.close();
+                delete c[s];
+                $(`r${s}`).remove();
+                sv();
+                if (!Object.keys(c).length) up();
+            }
         }
         
-        // Input event listener
+        function sortBy(col) {
+            const tb = $('tb');
+            if (!tb) return;
+            
+            s.dir = s.col === col ? (s.dir === 'asc' ? 'desc' : 'asc') : 'asc';
+            s.col = col;
+            
+            document.querySelectorAll('.sortable').forEach(th => th.classList.remove('asc', 'desc'));
+            document.querySelectorAll('.sortable').forEach(th => {
+                if (th.getAttribute('onclick')?.includes(`'${col}'`)) th.classList.add(s.dir);
+            });
+            
+            const rs = Array.from(tb.children);
+            const ci = {price: 2, change: 3, funding: 4, high: 5, low: 6, vol: 7}[col];
+            
+            rs.sort((a, b) => {
+                if (col === 'coin') {
+                    const r = a.cells[0].textContent.trim().localeCompare(b.cells[0].textContent.trim());
+                    return s.dir === 'asc' ? r : -r;
+                }
+                let vA = +(a.cells[ci].textContent.replace(/[\$,+%]/g, '') || 0);
+                let vB = +(b.cells[ci].textContent.replace(/[\$,+%]/g, '') || 0);
+                if (col === 'vol') {
+                    const tA = a.cells[ci].textContent;
+                    const tB = b.cells[ci].textContent;
+                    if (tA.includes('M')) vA *= 1e6;
+                    else if (tA.includes('K')) vA *= 1000;
+                    if (tB.includes('M')) vB *= 1e6;
+                    else if (tB.includes('K')) vB *= 1000;
+                }
+                return s.dir === 'asc' ? vA - vB : vB - vA;
+            });
+            
+            tb.innerHTML = '';
+            rs.forEach(row => tb.appendChild(row));
+        }
+        
         window.onload = () => {
-            const inp = document.getElementById('inp');
-            if(inp) {
+            const inp = $('inp');
+            if (inp) {
                 inp.focus();
                 inp.onkeypress = e => e.key === 'Enter' && addCoin();
             }
-            if(ld()) {
+            if (ld()) {
                 up();
                 Object.keys(c).forEach(cn);
             }
         };
-        window.onbeforeunload=()=>Object.values(c).forEach(c=>c.w?.close());
+        
+        window.onbeforeunload = () => {
+            Object.values(c).forEach(coin => coin.w?.close());
+        };
     </script>
 </body>
 </html>
