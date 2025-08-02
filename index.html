@@ -44,10 +44,10 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.2</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.3</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
-                <button onclick="add()">Ekle</button>
+                <button onclick="addCoin()">Ekle</button>
             </div>
         </div>
         <div class="empty-box" id="chart-box">
@@ -79,7 +79,7 @@
             if(!Object.keys(c).length){
                 ct.innerHTML='<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
             }else{
-                if(!$('tb'))ct.innerHTML=`<table><thead><tr><th class="sortable" onclick="sb('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sb('price')">Fiyat</th><th class="sortable" onclick="sb('change')">24s %</th><th class="sortable" onclick="sb('funding')">Fund</th><th class="sortable" onclick="sb('high')">24s Yüksek</th><th class="sortable" onclick="sb('low')">24s Düşük</th><th class="sortable" onclick="sb('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
+                if(!$('tb'))ct.innerHTML=`<table><thead><tr><th class="sortable" onclick="sortBy('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sortBy('price')">Fiyat</th><th class="sortable" onclick="sortBy('change')">24s %</th><th class="sortable" onclick="sortBy('funding')">Fund</th><th class="sortable" onclick="sortBy('high')">24s Yüksek</th><th class="sortable" onclick="sortBy('low')">24s Düşük</th><th class="sortable" onclick="sortBy('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
                 const tb=$('tb');
                 Object.keys(c).forEach(s=>{
                     if(!$(`r${s}`))tb.innerHTML+=`<tr id="r${s}"><td><div class="coin-name" onclick="lc('${s}')" style="cursor:pointer;text-decoration:underline">${s}</div></td><td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td><td class="numeric-cell"><div id="p${s}">$0.00</div></td><td class="numeric-cell" id="h${s}">-</td><td class="numeric-cell" id="f${s}">-</td><td class="numeric-cell" id="i${s}">-</td><td class="numeric-cell" id="o${s}">-</td><td class="numeric-cell" id="v${s}">-</td><td><button class="remove-btn" onclick="rm('${s}')">Kaldır</button></td></tr>`
@@ -173,7 +173,7 @@
                 cn(s);
                 sv();
                 inp.value = '';
-                if(Object.keys(c).length === 1) lc(s);
+                if(Object.keys(c).length === 1) loadChart(s);
                 console.log('Coin başarıyla eklendi!'); // Debug için
             } catch(error) {
                 console.error('Coin ekleme hatası:', error);
@@ -185,14 +185,17 @@
             if(c[s]){c[s].w?.close();delete c[s];$(`r${s}`).remove();sv();if(!Object.keys(c).length)up()}
         }
         
-        // Input focus ve klavye event'lerini düzelt
-        window.onload=()=>{
-            const inp=$('inp');
-            if(inp){
+        // Input event listener
+        window.onload = () => {
+            const inp = document.getElementById('inp');
+            if(inp) {
                 inp.focus();
-                inp.onkeypress=e=>e.key==='Enter'&&add();
+                inp.onkeypress = e => e.key === 'Enter' && addCoin();
             }
-            if(ld()){up();Object.keys(c).forEach(cn)}
+            if(ld()) {
+                up();
+                Object.keys(c).forEach(cn);
+            }
         };
         window.onbeforeunload=()=>Object.values(c).forEach(c=>c.w?.close());
     </script>
