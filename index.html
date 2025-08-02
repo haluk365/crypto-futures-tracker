@@ -396,13 +396,20 @@
                     console.log('Futures WebSocket bağlantısı kuruldu');
                     updateStatus(true);
                     
-                    // Futures sembollerini yükle ve tablo oluştur
-                    await loadFuturesSymbols();
-
-                    // Funding rate verilerini al
-                    console.log('Funding rates yükleniyor...');
-                    await fetchFundingRates();
-                    console.log('Başlangıç verileri yüklendi');
+                    try {
+                        // Önce futures sembollerini yükle
+                        await loadFuturesSymbols();
+                        console.log('Futures sembolleri başarıyla yüklendi');
+                        
+                        // Sonra funding rate verilerini al
+                        console.log('Funding rates yükleniyor...');
+                        await fetchFundingRates();
+                        console.log('Başlangıç verileri yüklendi');
+                        
+                    } catch (error) {
+                        console.error('Başlangıç verilerini yüklerken hata:', error);
+                        showError('Veriler yüklenirken hata: ' + error.message);
+                    }
                 };
 
                 ws.onmessage = function(event) {
@@ -455,6 +462,12 @@
 
         async function fetchFundingRates() {
             try {
+                // allFuturesSymbols kontrolü
+                if (!allFuturesSymbols || allFuturesSymbols.size === 0) {
+                    console.log('Henüz futures sembolleri yüklenmedi, funding rates atlanıyor...');
+                    return;
+                }
+                
                 console.log('Funding rates API çağrısı yapılıyor...');
                 const response = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex');
                 
@@ -563,6 +576,12 @@
         }
 
         function updateAllRows() {
+            // allFuturesSymbols kontrolü
+            if (!allFuturesSymbols || allFuturesSymbols.size === 0) {
+                console.log('allFuturesSymbols henüz hazır değil');
+                return;
+            }
+            
             allFuturesSymbols.forEach(symbol => {
                 updateCryptoRow(symbol);
             });
