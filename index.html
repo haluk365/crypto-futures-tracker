@@ -44,7 +44,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.8</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 2.0</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="addCoin()">Ekle</button>
@@ -70,11 +70,125 @@
         const fp = p => {
             const n = +p;
             return '$' + (n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(4) : n.toFixed(8));
-        };
+        const gf = async s => {
         const fn = n => n >= 1e6 ? (n/1e6).toFixed(2) + 'M' : n >= 1000 ? (n/1000).toFixed(2) + 'K' : (+n).toFixed(2);
         const ff = r => r ? ((+r * 100).toFixed(4) >= 0 ? '+' : '') + (+r * 100).toFixed(4) + '%' : '-';
         
-        const gf = async s => {
+        // RSI hesaplama fonksiyonu
+        const calculateRSI = (closes, period = 14) => {
+            if (closes.length < period + 1) return null;
+            
+            let gains = 0;
+            let losses = 0;
+            
+            // İlk period için ortalama hesapla
+            for (let i = 1; i <= period; i++) {
+                const change = closes[i] - closes[i - 1];
+                if (change >= 0) {
+                    gains += change;
+                } else {
+                    losses -= change;
+                }
+            }
+            
+            let avgGain = gains / period;
+            let avgLoss = losses / period;
+            
+            // Smoothed RSI hesaplama
+            for (let i = period + 1; i < closes.length; i++) {
+                const change = closes[i] - closes[i - 1];
+                
+                if (change >= 0) {
+                    avgGain = (avgGain * (period - 1) + change) / period;
+                    avgLoss = (avgLoss * (period - 1)) / period;
+                } else {
+                    avgGain = (avgGain * (period - 1)) / period;
+                    avgLoss = (avgLoss * (period - 1) - change) / period;
+                }
+            }
+            
+            if (avgLoss === 0) return 100;
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
+        };
+        
+        // RSI veri cache (5 dakika)
+        const rsiCache = new Map();
+        
+        // RSI verisini al ve hesapla
+        const getRSI = async (symbol) => {
+            const cacheKey = symbol;
+            const now = Date.now();
+            
+            // Cache kontrolü (5 dakika = 300000ms)
+            if (rsiCache.has(cacheKey)) {
+                const cached = rsiCache.get(cacheKey);
+                if (now - cached.timestamp < 300000) {
+                    console.log(`📊 RSI cache hit: ${symbol} = ${cached.value.toFixed(1)}`);
+                    return cached.value;
+                }
+            }
+            
+            try {
+                console.log(`📈 RSI hesaplanıyor: ${symbol}`);
+                
+                // 15 dakikalık klines al (RSI-14 için 15 adet yeterli)
+                const response = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&limit=16`);
+                const klines = await response.json();
+                
+                if (!klines || klines.length < 15) {
+                    console.error(`❌ ${symbol} için yeterli veri yok`);
+                    return null;
+                }
+                
+                // Close fiyatlarını çıkar
+                const closes = klines.map(kline => parseFloat(kline[4])); // Close price
+                
+                // RSI hesapla
+                const rsi = calculateRSI(closes, 14);
+                
+                if (rsi !== null) {
+                    // Cache'e kaydet
+                    rsiCache.set(cacheKey, {
+                        value: rsi,
+                        timestamp: now
+                    });
+                    
+                    console.log(`✅ ${symbol} RSI: ${rsi.toFixed(1)}`);
+                    return rsi;
+                }
+                
+            } catch (error) {
+                console.error(`❌ ${symbol} RSI hesaplama hatası:`, error);
+            }
+            
+            return null;
+        };
+        
+        // RSI değerini güncelle
+        const updateRSI = async (symbol) => {
+            const rsi = await getRSI(symbol);
+            const rsiElement = $(`rsi${symbol}`);
+            
+            if (rsiElement) {
+                if (rsi !== null) {
+                    rsiElement.textContent = rsi.toFixed(1);
+                    rsiElement.style.fontWeight = 'bold';
+                    
+                    // RSI değerine göre renk (opsiyonel - sadece subtle)
+                    if (rsi > 70) {
+                        rsiElement.style.color = '#ff6b6b'; // Hafif kırmızı
+                    } else if (rsi < 30) {
+                        rsiElement.style.color = '#51cf66'; // Hafif yeşil
+                    } else {
+                        rsiElement.style.color = '#ffffff'; // Beyaz
+                    }
+                } else {
+                    rsiElement.textContent = 'Err';
+                    rsiElement.style.color = '#ff4757';
+                }
+            }
+        };
             try {
                 const r = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${s}`);
                 return (await r.json()).lastFundingRate;
@@ -128,7 +242,7 @@
                 ct.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
             } else {
                 if (!$('tb')) {
-                    ct.innerHTML = `<table><thead><tr><th class="sortable" onclick="sortBy('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sortBy('price')">Fiyat</th><th class="sortable" onclick="sortBy('change')">24s %</th><th class="sortable" onclick="sortBy('funding')">Fund</th><th class="sortable" onclick="sortBy('high')">24s Yüksek</th><th class="sortable" onclick="sortBy('low')">24s Düşük</th><th class="sortable" onclick="sortBy('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
+                    ct.innerHTML = `<table><thead><tr><th class="sortable" onclick="sortBy('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sortBy('price')">Fiyat</th><th class="sortable" onclick="sortBy('change')">24s %</th><th class="sortable" onclick="sortBy('funding')">Fund</th><th class="sortable" onclick="sortBy('rsi')">RSI</th><th class="sortable" onclick="sortBy('high')">24s Yüksek</th><th class="sortable" onclick="sortBy('low')">24s Düşük</th><th class="sortable" onclick="sortBy('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
                 }
                 const tb = $('tb');
                 Object.keys(c).forEach(s => {
@@ -143,6 +257,7 @@
                             <td class="numeric-cell"><div id="p${s}">$0.00</div></td>
                             <td class="numeric-cell" id="h${s}">-</td>
                             <td class="numeric-cell" id="f${s}">-</td>
+                            <td class="numeric-cell" id="rsi${s}">-</td>
                             <td class="numeric-cell" id="i${s}">-</td>
                             <td class="numeric-cell" id="o${s}">-</td>
                             <td class="numeric-cell" id="v${s}">-</td>
@@ -170,6 +285,16 @@
                     const e = $(`f${s}`);
                     if (e) e.textContent = 'Hata';
                 });
+                
+                // RSI hesapla ve güncelle
+                updateRSI(s);
+                
+                // 5 dakikada bir RSI güncelle
+                setInterval(() => {
+                    if (c[s]) { // Coin hala listede mi?
+                        updateRSI(s);
+                    }
+                }, 300000); // 5 dakika
                 
                 w.onopen = () => {
                     console.log(`WebSocket açıldı: ${s}`);
@@ -265,7 +390,7 @@
                     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
                     script.async = true;
                     
-                    // Widget konfigürasyonu
+                    // Widget konfigürasyonu (uyarıları azaltmak için)
                     const config = {
                         "autosize": true,
                         "symbol": `BINANCE:${s}`,
@@ -281,7 +406,9 @@
                         "allow_symbol_change": false,
                         "save_image": false,
                         "calendar": false,
-                        "support_host": "https://www.tradingview.com"
+                        "support_host": "https://www.tradingview.com",
+                        "debug": false,
+                        "log_level": "error"
                     };
                     
                     script.innerHTML = JSON.stringify(config);
@@ -366,7 +493,7 @@
             });
             
             const rs = Array.from(tb.children);
-            const ci = {price: 2, change: 3, funding: 4, high: 5, low: 6, vol: 7}[col];
+            const ci = {price: 2, change: 3, funding: 4, rsi: 5, high: 6, low: 7, vol: 8}[col];
             
             rs.sort((a, b) => {
                 if (col === 'coin') {
