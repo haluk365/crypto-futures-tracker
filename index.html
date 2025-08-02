@@ -9,7 +9,7 @@
         body{font:14px 'Segoe UI',sans-serif;background:linear-gradient(135deg,#1e3c72,#2a5298);min-height:100vh;padding:2rem;color:white}
         .container{max-width:1200px;margin:0 auto}
         .header{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:2rem;margin-bottom:2rem;text-align:center}
-        .empty-box{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:15px;padding:1.5rem;margin-bottom:2rem;min-height:60px}
+        .empty-box{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:15px;padding:1.5rem;margin-bottom:2rem;min-height:450px}
         h1{margin-bottom:1.5rem;font-size:2.5rem;background:linear-gradient(45deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .add-coin{display:flex;gap:10px;max-width:400px;margin:0 auto}
         input{flex:1;padding:12px;border:none;border-radius:10px;background:rgba(255,255,255,0.2);color:white;font-size:16px}
@@ -49,7 +49,13 @@
                 <button onclick="add()">Ekle</button>
             </div>
         </div>
-        <div class="empty-box"></div>
+        <div class="empty-box" id="chart-box">
+            <div id="tradingview-widget" style="height: 400px;">
+                <div style="text-align: center; padding: 150px 0; opacity: 0.7;">
+                    📈 Grafik görmek için bir coin seçin
+                </div>
+            </div>
+        </div>
         <div class="table-container" id="cont">
             <div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>
         </div>
@@ -75,12 +81,40 @@
                 if(!$('tb'))ct.innerHTML=`<table><thead><tr><th class="sortable" onclick="sb('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sb('price')">Fiyat</th><th class="sortable" onclick="sb('change')">24s %</th><th class="sortable" onclick="sb('funding')">Fund</th><th class="sortable" onclick="sb('high')">24s Yüksek</th><th class="sortable" onclick="sb('low')">24s Düşük</th><th class="sortable" onclick="sb('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
                 const tb=$('tb');
                 Object.keys(c).forEach(s=>{
-                    if(!$(`r${s}`))tb.innerHTML+=`<tr id="r${s}"><td><div class="coin-name">${s}</div></td><td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td><td class="numeric-cell"><div id="p${s}">$0.00</div></td><td class="numeric-cell" id="h${s}">-</td><td class="numeric-cell" id="f${s}">-</td><td class="numeric-cell" id="i${s}">-</td><td class="numeric-cell" id="o${s}">-</td><td class="numeric-cell" id="v${s}">-</td><td><button class="remove-btn" onclick="rm('${s}')">Kaldır</button></td></tr>`
+                    if(!$(`r${s}`))tb.innerHTML+=`<tr id="r${s}"><td><div class="coin-name" onclick="lc('${s}')" style="cursor:pointer;text-decoration:underline">${s}</div></td><td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td><td class="numeric-cell"><div id="p${s}">$0.00</div></td><td class="numeric-cell" id="h${s}">-</td><td class="numeric-cell" id="f${s}">-</td><td class="numeric-cell" id="i${s}">-</td><td class="numeric-cell" id="o${s}">-</td><td class="numeric-cell" id="v${s}">-</td><td><button class="remove-btn" onclick="rm('${s}')">Kaldır</button></td></tr>`
                 });
             }
-        };
-        
         const cn=s=>{
+        
+        const lc=s=>{
+            const w=$('tradingview-widget');
+            if(!w)return;
+            w.innerHTML=`<div style="text-align:center;padding:50px 0;opacity:0.7;">📈 ${s} grafiği yükleniyor...</div>`;
+            setTimeout(()=>{
+                w.innerHTML=`<div class="tradingview-widget-container" style="height:100%;width:100%">
+                    <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                    {
+                        "autosize":true,
+                        "symbol":"BINANCE:${s}",
+                        "interval":"15",
+                        "timezone":"Etc/UTC",
+                        "theme":"dark",
+                        "style":"1",
+                        "locale":"tr",
+                        "enable_publishing":false,
+                        "withdateranges":true,
+                        "range":"1D",
+                        "hide_side_toolbar":false,
+                        "allow_symbol_change":false,
+                        "save_image":false,
+                        "calendar":false,
+                        "support_host":"https://www.tradingview.com"
+                    }
+                    <\/script>
+                </div>`;
+            },500);
+        };
             const w=new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
             c[s].w=w;
             gf(s).then(r=>{const e=$(`f${s}`);if(e){e.textContent=ff(r);e.className=`numeric-cell ${(+r||0)>=0?'change-positive':'change-negative'}`}});
@@ -124,6 +158,7 @@
             if(c[s])return alert(`${s} zaten takip ediliyor!`);
             if(Object.keys(c).length>=20)return alert('Maksimum 20 coin takip edebilirsiniz!');
             c[s]={w:null,l:0};up();cn(s);sv();$('inp').value='';
+            if(Object.keys(c).length===1)lc(s);
         }
         
         function rm(s){
