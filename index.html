@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kripto Para Takip</title>
+    <title>Binance Futures Fiyat Takipçisi</title>
     <style>
         * {
             margin: 0;
@@ -13,688 +13,411 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .status {
-            display: inline-block;
-            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            margin-top: 10px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
         }
 
-        .status.connected {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .status.disconnected {
-            background: #f44336;
-            color: white;
+        h1 {
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            margin-bottom: 2rem;
         }
 
-        .btn {
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        button {
             padding: 12px 24px;
             border: none;
-            border-radius: 25px;
-            font-size: 1rem;
-            font-weight: bold;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            font-size: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: bold;
         }
 
-        .btn-primary {
-            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: linear-gradient(45deg, #4ECDC4, #44A08D);
-            color: white;
-        }
-
-        .btn:hover {
+        button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(238, 90, 36, 0.4);
         }
 
-        .symbol-input {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        .symbol-input input {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            min-width: 200px;
+        .price-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem 0;
         }
 
-        .table-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            overflow: hidden;
-            position: relative;
+        .coin-name {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
         }
 
-        .table-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
-        }
-
-        .crypto-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 4px;
-        }
-
-        .crypto-table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 15px;
-            text-align: left;
+        .price {
+            font-size: 3rem;
             font-weight: bold;
-            font-size: 1.1rem;
-            border: none;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-
-        .crypto-table th:first-child {
-            border-radius: 0;
-        }
-
-        .crypto-table th:last-child {
-            border-radius: 0;
-        }
-
-        .crypto-table td {
-            padding: 18px 15px;
-            border-bottom: 1px solid #eee;
-            transition: all 0.3s ease;
-        }
-
-        .crypto-table tbody tr {
-            transition: all 0.3s ease;
-        }
-
-        .crypto-table tbody tr:hover {
-            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-            transform: scale(1.01);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .symbol-cell {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        .price-cell {
-            font-size: 1.4rem;
-            font-weight: bold;
-            color: #2c3e50;
+            margin-bottom: 0.5rem;
             font-family: 'Courier New', monospace;
         }
 
-        .change-cell {
-            font-weight: bold;
-            font-size: 1.1rem;
+        .price.up {
+            color: #00ff88;
+            animation: pulse-green 0.5s ease-in-out;
+        }
+
+        .price.down {
+            color: #ff4757;
+            animation: pulse-red 0.5s ease-in-out;
+        }
+
+        .price-change {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
         }
 
         .change-positive {
-            color: #27ae60;
-            background: rgba(39, 174, 96, 0.1);
-            padding: 6px 12px;
-            border-radius: 15px;
-            display: inline-block;
+            color: #00ff88;
         }
 
         .change-negative {
-            color: #e74c3c;
-            background: rgba(231, 76, 60, 0.1);
-            padding: 6px 12px;
-            border-radius: 15px;
-            display: inline-block;
-        }
-
-        .funding-cell {
-            font-weight: bold;
-            font-size: 1.1rem;
-            font-family: 'Courier New', monospace;
-        }
-
-        .funding-positive {
-            color: #27ae60;
-        }
-
-        .funding-negative {
-            color: #e74c3c;
-        }
-
-        .remove-btn {
-            background: linear-gradient(45deg, #ff4757, #ff3742);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
-        }
-
-        .remove-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
-        }
-
-        .volume-cell {
-            font-size: 1rem;
-            color: #666;
-            font-family: 'Courier New', monospace;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 1.2rem;
-            font-style: italic;
-        }
-
-        .loading {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-        }
-
-        .error-msg {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .debug-console {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 400px;
-            height: 300px;
-            background: rgba(0, 0, 0, 0.9);
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            border-radius: 10px;
-            border: 2px solid #333;
-            z-index: 1000;
-            display: none;
-        }
-
-        .debug-header {
-            background: #333;
-            padding: 8px 12px;
-            border-radius: 8px 8px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .debug-title {
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .debug-toggle {
-            background: #ff4757;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            cursor: pointer;
-            font-size: 10px;
-        }
-
-        .debug-content {
-            height: 250px;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .debug-log {
-            margin-bottom: 5px;
-            word-wrap: break-word;
-        }
-
-        .debug-log.info {
-            color: #00ff00;
-        }
-
-        .debug-log.warning {
-            color: #ffaa00;
-        }
-
-        .debug-log.error {
             color: #ff4757;
         }
 
-        .debug-log.success {
-            color: #2ed573;
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
         }
 
-        .debug-timestamp {
-            color: #666;
-            font-size: 10px;
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
         }
 
-        .debug-show-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .status {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            border-radius: 8px;
+        }
+
+        .status.connected {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .status.disconnected {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+
+        .status.connecting {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); color: #00ff88; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); color: #ff4757; }
+            100% { transform: scale(1); }
+        }
+
+        .popular-coins {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        .coin-button {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.2);
             border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
             cursor: pointer;
-            font-size: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            z-index: 999;
+            transition: all 0.3s ease;
         }
 
-        .debug-show-btn:hover {
-            transform: scale(1.1);
-        }
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .crypto-table {
-                font-size: 0.9rem;
-            }
-            
-            .crypto-table th,
-            .crypto-table td {
-                padding: 12px 8px;
-            }
-            
-            .symbol-cell {
-                font-size: 1.1rem;
-            }
-            
-            .price-cell {
-                font-size: 1.2rem;
-            }
-            
-            .remove-btn {
-                width: 30px;
-                height: 30px;
-                font-size: 1rem;
-            }
+        .coin-button:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🚀 Futures Kripto Para Takip</h1>
-            <div class="status disconnected" id="status">Futures Bağlantısı Kuruluyor...</div>
-        </div>
-
-        <div class="controls">
-            <button class="btn btn-primary" onclick="connectWebSocket()">🔗 Futures Bağlan</button>
-            <button class="btn btn-secondary" onclick="disconnectWebSocket()">❌ Bağlantıyı Kes</button>
-        </div>
-
-        <div id="errorMsg" class="error-msg" style="display: none;"></div>
+        <h1>🚀 Binance Futures Takipçisi</h1>
         
-        <div class="table-container">
-            <table class="crypto-table" id="cryptoTable">
-                <thead>
-                    <tr>
-                        <th>📊 Sembol</th>
-                        <th>💰 Fiyat (USDT)</th>
-                        <th>📈 24s Değişim</th>
-                        <th>📊 Hacim (24s)</th>
-                        <th>⚡ Funding Rate</th>
-                    </tr>
-                </thead>
-                <tbody id="cryptoTableBody">
-                    <!-- Veriler buraya eklenecek -->
-                </tbody>
-            </table>
-            <div id="noDataMessage" class="no-data">
-                🔄 Futures veriler yükleniyor... Lütfen bekleyin.
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="coinInput" placeholder="Coin adı (örn: BTCUSDT)" value="BTCUSDT">
+                <button id="connectBtn">Bağlan</button>
+            </div>
+            
+            <div class="popular-coins">
+                <button class="coin-button" onclick="selectCoin('BTCUSDT')">BTC</button>
+                <button class="coin-button" onclick="selectCoin('ETHUSDT')">ETH</button>
+                <button class="coin-button" onclick="selectCoin('BNBUSDT')">BNB</button>
+                <button class="coin-button" onclick="selectCoin('ADAUSDT')">ADA</button>
+                <button class="coin-button" onclick="selectCoin('SOLUSDT')">SOL</button>
+                <button class="coin-button" onclick="selectCoin('DOGEUSDT')">DOGE</button>
+            </div>
+        </div>
+
+        <div class="status" id="status">Bağlantı bekleniyor...</div>
+
+        <div class="price-display" id="priceDisplay" style="display: none;">
+            <div class="coin-name" id="coinName">-</div>
+            <div class="price" id="price">$0.00</div>
+            <div class="price-change" id="priceChange">-</div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">24s Yüksek</div>
+                    <div class="stat-value" id="high24h">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">24s Düşük</div>
+                    <div class="stat-value" id="low24h">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">24s Hacim</div>
+                    <div class="stat-value" id="volume24h">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Son Güncelleme</div>
+                    <div class="stat-value" id="lastUpdate">-</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         let ws = null;
-        let subscribedSymbols = new Set();
-        let cryptoData = {};
-        let fundingRates = {};
+        let currentSymbol = '';
+        let lastPrice = 0;
 
-        // Varsayılan futures semboller
-        const defaultSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'SOLUSDT'];
-        let availableFuturesSymbols = new Set();
+        const coinInput = document.getElementById('coinInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const status = document.getElementById('status');
+        const priceDisplay = document.getElementById('priceDisplay');
+        const coinName = document.getElementById('coinName');
+        const price = document.getElementById('price');
+        const priceChange = document.getElementById('priceChange');
+        const high24h = document.getElementById('high24h');
+        const low24h = document.getElementById('low24h');
+        const volume24h = document.getElementById('volume24h');
+        const lastUpdate = document.getElementById('lastUpdate');
 
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMsg');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
+        function selectCoin(symbol) {
+            coinInput.value = symbol;
         }
 
-        function updateStatus(connected) {
-            const statusDiv = document.getElementById('status');
-            if (connected) {
-                statusDiv.textContent = '🟢 Futures Bağlı';
-                statusDiv.className = 'status connected';
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(2) + 'K';
+            }
+            return parseFloat(num).toFixed(2);
+        }
+
+        function formatPrice(price) {
+            const num = parseFloat(price);
+            if (num >= 1) {
+                return '$' + num.toFixed(2);
+            } else if (num >= 0.01) {
+                return '$' + num.toFixed(4);
             } else {
-                statusDiv.textContent = '🔴 Futures Bağlantı Kesildi';
-                statusDiv.className = 'status disconnected';
+                return '$' + num.toFixed(8);
             }
         }
 
-        async function loadFuturesSymbols() {
-            try {
-                const response = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
-                const data = await response.json();
-                
-                // Sadece aktif futures sembollerini al
-                data.symbols.forEach(symbol => {
-                    if (symbol.status === 'TRADING' && symbol.contractType === 'PERPETUAL') {
-                        availableFuturesSymbols.add(symbol.symbol);
-                    }
-                });
-                
-                console.log(`${availableFuturesSymbols.size} futures sembolü yüklendi`);
-            } catch (error) {
-                console.error('Futures sembolleri yüklenirken hata:', error);
-                showError('Futures sembolleri yüklenemedi');
-            }
+        function updateStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
         }
 
         function connectWebSocket() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                showError('Zaten bağlısınız!');
+            const symbol = coinInput.value.trim().toUpperCase();
+            
+            if (!symbol) {
+                updateStatus('Lütfen bir coin adı girin!', 'disconnected');
                 return;
             }
 
-            try {
-                console.log('WebSocket bağlantısı kuruluyor...');
-                
-                // Binance Futures WebSocket bağlantısı
-                ws = new WebSocket('wss://fstream.binance.com/ws/!ticker@arr');
-                
-                ws.onopen = async function() {
-                    console.log('Futures WebSocket bağlantısı kuruldu');
-                    updateStatus(true);
-                    
-                    try {
-                        // Önce futures sembollerini yükle
-                        await loadFuturesSymbols();
-                        console.log('Futures sembolleri başarıyla yüklendi');
-                        
-                        // Sonra funding rate verilerini al
-                        console.log('Funding rates yükleniyor...');
-                        await fetchFundingRates();
-                        console.log('Başlangıç verileri yüklendi');
-                        
-                    } catch (error) {
-                        console.error('Başlangıç verilerini yüklerken hata:', error);
-                        showError('Veriler yüklenirken hata: ' + error.message);
-                    }
-                };
-
-                ws.onmessage = function(event) {
-                    try {
-                        const data = JSON.parse(event.data);
-                        
-                        // Eğer dizi ise (tüm futures semboller)
-                        if (Array.isArray(data)) {
-                            let updateCount = 0;
-                            data.forEach(ticker => {
-                                if (allFuturesSymbols.has(ticker.s)) {
-                                    updateCryptoData(ticker);
-                                    updateCount++;
-                                }
-                            });
-                            
-                            if (updateCount > 0) {
-                                console.log(`${updateCount} sembol güncellendi`);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Veri işleme hatası:', error);
-                    }
-                };
-
-                ws.onclose = function(event) {
-                    updateStatus(false);
-                    console.log('Futures WebSocket bağlantısı kapandı:', event.code, event.reason);
-                };
-
-                ws.onerror = function(error) {
-                    updateStatus(false);
-                    console.error('WebSocket hatası:', error);
-                    showError('Futures WebSocket bağlantı hatası');
-                };
-
-            } catch (error) {
-                showError('Bağlantı kurulurken hata: ' + error.message);
-                console.error('Bağlantı hatası:', error);
-            }
-        }
-
-        function disconnectWebSocket() {
             if (ws) {
                 ws.close();
-                ws = null;
-                updateStatus(false);
-                debugLog('🔌 WebSocket bağlantısı manuel olarak kapatıldı', 'info');
             }
-        }
 
-        async function fetchFundingRates() {
-            try {
-                // allFuturesSymbols kontrolü
-                if (!allFuturesSymbols || allFuturesSymbols.size === 0) {
-                    debugLog('⚠️ Henüz futures sembolleri yüklenmedi, funding rates atlanıyor', 'warning');
-                    return;
-                }
-                
-                debugLog('🔄 Funding rates API çağrısı yapılıyor...', 'info');
-                const response = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                debugLog(`📡 ${data.length} funding rate verisi alındı`, 'info');
-                
-                let processedCount = 0;
-                data.forEach(item => {
-                    if (allFuturesSymbols.has(item.symbol)) {
-                        fundingRates[item.symbol] = {
-                            rate: parseFloat(item.lastFundingRate) * 100,
-                            nextTime: new Date(parseInt(item.nextFundingTime))
-                        };
-                        processedCount++;
-                    }
-                });
-                
-                debugLog(`✅ ${processedCount} sembol için funding rate işlendi`, 'success');
-                updateAllRows();
-                
-            } catch (error) {
-                debugLog(`❌ Funding rate alınırken hata: ${error.message}`, 'error');
-                showError('Funding rates yüklenemedi: ' + error.message);
-            }
-        }
+            currentSymbol = symbol;
+            updateStatus('Bağlanıyor...', 'connecting');
+            connectBtn.disabled = true;
+            connectBtn.textContent = 'Bağlanıyor...';
 
-        function updateCryptoData(ticker) {
-            cryptoData[ticker.s] = {
-                symbol: ticker.s,
-                price: parseFloat(ticker.c),
-                change: parseFloat(ticker.P),
-                volume: parseFloat(ticker.q) // Quote asset volume (USDT cinsinden)
+            // Binance Futures WebSocket URL
+            const wsUrl = `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@ticker`;
+            
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                updateStatus(`${symbol} için bağlantı kuruldu!`, 'connected');
+                connectBtn.disabled = false;
+                connectBtn.textContent = 'Yeniden Bağlan';
+                priceDisplay.style.display = 'block';
+                coinName.textContent = symbol;
             };
-            
-            updateCryptoRow(ticker.s);
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    const currentPrice = parseFloat(data.c);
+                    const change24h = parseFloat(data.P);
+                    const changeAmount = parseFloat(data.p);
+                    
+                    // Fiyat değişim animasyonu
+                    price.className = 'price';
+                    if (currentPrice > lastPrice) {
+                        price.classList.add('up');
+                    } else if (currentPrice < lastPrice) {
+                        price.classList.add('down');
+                    }
+                    
+                    // Fiyat bilgilerini güncelle
+                    price.textContent = formatPrice(data.c);
+                    
+                    // Değişim yüzdesini güncelle
+                    const changeText = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}% (${changeAmount >= 0 ? '+' : ''}${formatPrice(changeAmount)})`;
+                    priceChange.textContent = changeText;
+                    priceChange.className = change24h >= 0 ? 'change-positive' : 'change-negative';
+                    
+                    // İstatistikleri güncelle
+                    high24h.textContent = formatPrice(data.h);
+                    low24h.textContent = formatPrice(data.l);
+                    volume24h.textContent = formatNumber(data.v);
+                    
+                    // Son güncelleme zamanı
+                    const now = new Date();
+                    lastUpdate.textContent = now.toLocaleTimeString('tr-TR');
+                    
+                    lastPrice = currentPrice;
+                    
+                } catch (error) {
+                    console.error('Veri işleme hatası:', error);
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket hatası:', error);
+                updateStatus('Bağlantı hatası!', 'disconnected');
+                connectBtn.disabled = false;
+                connectBtn.textContent = 'Tekrar Dene';
+            };
+
+            ws.onclose = function() {
+                updateStatus('Bağlantı kesildi', 'disconnected');
+                connectBtn.disabled = false;
+                connectBtn.textContent = 'Bağlan';
+            };
         }
 
-        // Sembol ekleme/kaldırma fonksiyonları kaldırıldı - artık tüm futures coinler otomatik listeleniyor
-
-        function createCryptoRow(symbol) {
-            const tbody = document.getElementById('cryptoTableBody');
-            const row = document.createElement('tr');
-            row.id = `row-${symbol}`;
-            
-            row.innerHTML = `
-                <td class="symbol-cell">${symbol}</td>
-                <td class="price-cell" id="price-${symbol}">--</td>
-                <td class="change-cell" id="change-${symbol}">
-                    <span class="change-positive">--%</span>
-                </td>
-                <td class="volume-cell" id="volume-${symbol}">--</td>
-                <td class="funding-cell" id="funding-${symbol}">--</td>
-            `;
-            
-            tbody.appendChild(row);
-        }
-
-        function updateCryptoRow(symbol) {
-            const data = cryptoData[symbol];
-            if (!data) return;
-
-            const priceEl = document.getElementById(`price-${symbol}`);
-            const changeEl = document.getElementById(`change-${symbol}`);
-            
-            if (priceEl) {
-                priceEl.textContent = `${data.price.toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: data.price < 1 ? 6 : 2
-                })}`;
+        // Event listeners
+        connectBtn.addEventListener('click', connectWebSocket);
+        
+        coinInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                connectWebSocket();
             }
-            
-            if (changeEl) {
-                const changeValue = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
-                changeEl.innerHTML = `<span class="${data.change >= 0 ? 'change-positive' : 'change-negative'}">${changeValue}</span>`;
-            }
-
-            updateFundingRateRow(symbol);
-        }
-
-        function updateFundingRateRow(symbol) {
-            const fundingEl = document.getElementById(`funding-${symbol}`);
-            const funding = fundingRates[symbol];
-            
-            if (fundingEl && funding) {
-                fundingEl.textContent = `${funding.rate >= 0 ? '+' : ''}${funding.rate.toFixed(4)}%`;
-                fundingEl.className = `funding-cell ${funding.rate >= 0 ? 'funding-positive' : 'funding-negative'}`;
-            }
-        }
-
-        function updateNoDataMessage() {
-            const tbody = document.getElementById('cryptoTableBody');
-            const noDataMsg = document.getElementById('noDataMessage');
-            const table = document.getElementById('cryptoTable');
-            
-            if (tbody.children.length === 0) {
-                table.style.display = 'none';
-                noDataMsg.style.display = 'block';
-            } else {
-                table.style.display = 'table';
-                noDataMsg.style.display = 'none';
-            }
-        }
-
-        function updateAllRows() {
-            // allFuturesSymbols kontrolü
-            if (!allFuturesSymbols || allFuturesSymbols.size === 0) {
-                debugLog('⚠️ allFuturesSymbols henüz hazır değil', 'warning');
-                return;
-            }
-            
-            allFuturesSymbols.forEach(symbol => {
-                updateCryptoRow(symbol);
-            });
-        }
-
-        function handleKeyPress(event) {
-            // Artık sembol ekleme özelliği yok
-        }
+        });
 
         // Sayfa yüklendiğinde otomatik bağlan
-        window.onload = function() {
-            connectWebSocket();
-            updateNoDataMessage();
-            
-            // Her 5 dakikada bir funding rate verilerini güncelle
-            setInterval(fetchFundingRates, 5 * 60 * 1000);
-        };
+        window.addEventListener('load', function() {
+            setTimeout(connectWebSocket, 500);
+        });
 
-        // Sayfa kapatılırken bağlantıyı kapat
-        window.onbeforeunload = function() {
-            disconnectWebSocket();
-        };
+        // Sayfa kapanırken WebSocket bağlantısını kapat
+        window.addEventListener('beforeunload', function() {
+            if (ws) {
+                ws.close();
+            }
+        });
     </script>
 </body>
 </html>
