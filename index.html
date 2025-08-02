@@ -249,19 +249,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Kripto Para Takip</h1>
-            <div class="status disconnected" id="status">Bağlantı Kuruluyor...</div>
+            <h1>🚀 Futures Kripto Para Takip</h1>
+            <div class="status disconnected" id="status">Futures Bağlantısı Kuruluyor...</div>
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" onclick="connectWebSocket()">🔗 Bağlan</button>
+            <button class="btn btn-primary" onclick="connectWebSocket()">🔗 Futures Bağlan</button>
             <button class="btn btn-secondary" onclick="disconnectWebSocket()">❌ Bağlantıyı Kes</button>
         </div>
 
         <div class="symbol-input">
-            <input type="text" id="symbolInput" placeholder="Kripto sembolü girin (örn: BTCUSDT)" 
+            <input type="text" id="symbolInput" placeholder="Futures sembolü girin (örn: BTCUSDT)" 
                    onkeypress="handleKeyPress(event)">
-            <button class="btn btn-primary" onclick="addSymbol()">➕ Ekle</button>
+            <button class="btn btn-primary" onclick="addSymbol()">➕ Futures Ekle</button>
         </div>
 
         <div id="errorMsg" class="error-msg" style="display: none;"></div>
@@ -277,8 +277,9 @@
         let cryptoData = {};
         let fundingRates = {};
 
-        // Varsayılan semboller
+        // Varsayılan futures semboller
         const defaultSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'SOLUSDT'];
+        let availableFuturesSymbols = new Set();
 
         function showError(message) {
             const errorDiv = document.getElementById('errorMsg');
@@ -292,11 +293,30 @@
         function updateStatus(connected) {
             const statusDiv = document.getElementById('status');
             if (connected) {
-                statusDiv.textContent = '🟢 Bağlı';
+                statusDiv.textContent = '🟢 Futures Bağlı';
                 statusDiv.className = 'status connected';
             } else {
-                statusDiv.textContent = '🔴 Bağlantı Kesildi';
+                statusDiv.textContent = '🔴 Futures Bağlantı Kesildi';
                 statusDiv.className = 'status disconnected';
+            }
+        }
+
+        async function loadFuturesSymbols() {
+            try {
+                const response = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
+                const data = await response.json();
+                
+                // Sadece aktif futures sembollerini al
+                data.symbols.forEach(symbol => {
+                    if (symbol.status === 'TRADING' && symbol.contractType === 'PERPETUAL') {
+                        availableFuturesSymbols.add(symbol.symbol);
+                    }
+                });
+                
+                console.log(`${availableFuturesSymbols.size} futures sembolü yüklendi`);
+            } catch (error) {
+                console.error('Futures sembolleri yüklenirken hata:', error);
+                showError('Futures sembolleri yüklenemedi');
             }
         }
 
@@ -307,16 +327,21 @@
             }
 
             try {
-                // Binance WebSocket bağlantısı
-                ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+                // Binance Futures WebSocket bağlantısı
+                ws = new WebSocket('wss://fstream.binance.com/ws/!ticker@arr');
                 
-                ws.onopen = function() {
+                ws.onopen = async function() {
                     updateStatus(true);
-                    console.log('WebSocket bağlantısı kuruldu');
+                    console.log('Futures WebSocket bağlantısı kuruldu');
                     
-                    // Varsayılan sembolleri ekle
+                    // Futures sembollerini yükle
+                    await loadFuturesSymbols();
+                    
+                    // Varsayılan sembolleri ekle (sadece futures olanları)
                     defaultSymbols.forEach(symbol => {
-                        addSymbolToTrack(symbol);
+                        if (availableFuturesSymbols.has(symbol)) {
+                            addSymbolToTrack(symbol);
+                        }
                     });
 
                     // Funding rate verilerini al
@@ -327,10 +352,10 @@
                     try {
                         const data = JSON.parse(event.data);
                         
-                        // Eğer dizi ise (tüm semboller)
+                        // Eğer dizi ise (tüm futures semboller)
                         if (Array.isArray(data)) {
                             data.forEach(ticker => {
-                                if (subscribedSymbols.has(ticker.s)) {
+                                if (subscribedSymbols.has(ticker.s) && availableFuturesSymbols.has(ticker.s)) {
                                     updateCryptoData(ticker);
                                 }
                             });
@@ -342,12 +367,12 @@
 
                 ws.onclose = function() {
                     updateStatus(false);
-                    console.log('WebSocket bağlantısı kapandı');
+                    console.log('Futures WebSocket bağlantısı kapandı');
                 };
 
                 ws.onerror = function(error) {
                     updateStatus(false);
-                    showError('WebSocket bağlantı hatası: ' + error.message);
+                    showError('Futures WebSocket bağlantı hatası: ' + error.message);
                     console.error('WebSocket hatası:', error);
                 };
 
@@ -401,12 +426,18 @@
             const symbol = input.value.toUpperCase().trim();
             
             if (!symbol) {
-                showError('Lütfen bir sembol girin!');
+                showError('Lütfen bir futures sembolü girin!');
+                return;
+            }
+
+            // Futures sembolü kontrolü
+            if (!availableFuturesSymbols.has(symbol)) {
+                showError(`${symbol} futures piyasasında mevcut değil! Sadece futures coinleri eklenebilir.`);
                 return;
             }
 
             if (subscribedSymbols.has(symbol)) {
-                showError('Bu sembol zaten takip ediliyor!');
+                showError('Bu futures sembolü zaten takip ediliyor!');
                 return;
             }
 
