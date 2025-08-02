@@ -205,7 +205,7 @@
         
         <div class="controls">
             <div class="input-group">
-                <input type="text" id="coinInput" placeholder="Coin adı (örn: BTCUSDT)" value="BTCUSDT">
+                <input type="text" id="coinInput" placeholder="Coin adı (örn: BTC)" value="BTC">
                 <button id="connectBtn">Bağlan</button>
             </div>
             
@@ -308,11 +308,16 @@
         }
 
         function connectWebSocket() {
-            const symbol = coinInput.value.trim().toUpperCase();
+            let symbol = coinInput.value.trim().toUpperCase();
             
             if (!symbol) {
                 updateStatus('Lütfen bir coin adı girin!', 'disconnected');
                 return;
+            }
+
+            // Otomatik olarak USDT ekle (eğer zaten yoksa)
+            if (!symbol.endsWith('USDT')) {
+                symbol = symbol + 'USDT';
             }
 
             // Coin'in Futures'da mevcut olup olmadığını kontrol et
