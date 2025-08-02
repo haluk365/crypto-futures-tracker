@@ -44,7 +44,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.7</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.8</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="addCoin()">Ekle</button>
@@ -133,7 +133,21 @@
                 const tb = $('tb');
                 Object.keys(c).forEach(s => {
                     if (!$(`r${s}`)) {
-                        tb.innerHTML += `<tr id="r${s}"><td><div class="coin-name" onclick="loadChart('${s}')" style="cursor:pointer;text-decoration:underline">${s}</div></td><td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td><td class="numeric-cell"><div id="p${s}">$0.00</div></td><td class="numeric-cell" id="h${s}">-</td><td class="numeric-cell" id="f${s}">-</td><td class="numeric-cell" id="i${s}">-</td><td class="numeric-cell" id="o${s}">-</td><td class="numeric-cell" id="v${s}">-</td><td><button class="remove-btn" onclick="removeCoin('${s}')">Kaldır</button></td></tr>`;
+                        tb.innerHTML += `<tr id="r${s}">
+                            <td>
+                                <div class="coin-name" onclick="loadChart('${s}')" style="cursor:pointer;text-decoration:underline;color:#ffd700;" title="Grafiği görmek için tıklayın">
+                                    ${s}
+                                </div>
+                            </td>
+                            <td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td>
+                            <td class="numeric-cell"><div id="p${s}">$0.00</div></td>
+                            <td class="numeric-cell" id="h${s}">-</td>
+                            <td class="numeric-cell" id="f${s}">-</td>
+                            <td class="numeric-cell" id="i${s}">-</td>
+                            <td class="numeric-cell" id="o${s}">-</td>
+                            <td class="numeric-cell" id="v${s}">-</td>
+                            <td><button class="remove-btn" onclick="removeCoin('${s}')">Kaldır</button></td>
+                        </tr>`;
                     }
                 });
             }
@@ -214,34 +228,91 @@
         };
         
         function loadChart(s) {
-            const w = $('tradingview-widget');
-            if (!w) return;
-            w.innerHTML = `<div style="text-align:center;padding:50px 0;opacity:0.7;">📈 ${s} grafiği yükleniyor...</div>`;
+            console.log(`📈 Grafik yükleniyor: ${s}`);
+            const w = document.getElementById('tradingview-widget');
+            
+            if (!w) {
+                console.error('❌ TradingView widget container bulunamadı!');
+                return;
+            }
+            
+            // Loading mesajı göster
+            w.innerHTML = `<div style="text-align:center;padding:50px 0;opacity:0.7;font-size:16px;">📈 ${s} grafiği yükleniyor...</div>`;
+            
+            // Eski script'leri temizle
+            const oldScripts = document.querySelectorAll('script[src*="tradingview"]');
+            oldScripts.forEach(script => script.remove());
+            
             setTimeout(() => {
-                w.innerHTML = `<div class="tradingview-widget-container" style="height:100%;width:100%">
-                    <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-                    {
-                        "autosize":true,
-                        "symbol":"BINANCE:${s}",
-                        "interval":"15",
-                        "timezone":"Etc/UTC",
-                        "theme":"dark",
-                        "style":"1",
-                        "locale":"tr",
-                        "enable_publishing":false,
-                        "withdateranges":true,
-                        "range":"1D",
-                        "hide_side_toolbar":false,
-                        "allow_symbol_change":false,
-                        "save_image":false,
-                        "calendar":false,
-                        "support_host":"https://www.tradingview.com"
+                try {
+                    // Yeni widget HTML'i
+                    const widgetHTML = `
+                        <div class="tradingview-widget-container" style="height:100%;width:100%;">
+                            <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%;"></div>
+                            <div class="tradingview-widget-copyright">
+                                <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+                                    <span class="blue-text">Track all markets on TradingView</span>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    
+                    w.innerHTML = widgetHTML;
+                    
+                    // Script elementi oluştur
+                    const script = document.createElement('script');
+                    script.type = 'text/javascript';
+                    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+                    script.async = true;
+                    
+                    // Widget konfigürasyonu
+                    const config = {
+                        "autosize": true,
+                        "symbol": `BINANCE:${s}`,
+                        "interval": "15",
+                        "timezone": "Etc/UTC",
+                        "theme": "dark",
+                        "style": "1",
+                        "locale": "tr",
+                        "enable_publishing": false,
+                        "withdateranges": true,
+                        "range": "1D",
+                        "hide_side_toolbar": false,
+                        "allow_symbol_change": false,
+                        "save_image": false,
+                        "calendar": false,
+                        "support_host": "https://www.tradingview.com"
+                    };
+                    
+                    script.innerHTML = JSON.stringify(config);
+                    
+                    // Script'i widget container'a ekle
+                    const widgetContainer = w.querySelector('.tradingview-widget-container__widget');
+                    if (widgetContainer) {
+                        widgetContainer.appendChild(script);
+                        console.log(`✅ ${s} grafiği başarıyla yüklendi`);
+                    } else {
+                        console.error('❌ Widget container bulunamadı');
                     }
-                    <\/script>
-                </div>`;
-            }, 500);
+                    
+                } catch (error) {
+                    console.error('❌ TradingView widget yükleme hatası:', error);
+                    w.innerHTML = `<div style="text-align:center;padding:50px 0;opacity:0.7;color:#ff4757;">
+                        ❌ Grafik yüklenirken hata oluştu<br>
+                        <small>${s}</small>
+                    </div>`;
+                }
+            }, 300);
         }
+        
+        // Global fonksiyon olarak tanımla
+        window.loadChart = loadChart;
+        
+        // Debug için test fonksiyonu
+        window.testChart = function(symbol) {
+            console.log('🧪 Test chart loading:', symbol || 'BTCUSDT');
+            loadChart(symbol || 'BTCUSDT');
+        };
         
         function addCoin() {
             const inp = $('inp');
