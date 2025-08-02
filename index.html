@@ -264,6 +264,24 @@
             return '$' + num.toFixed(8);
         }
 
+        async function getFundingRate(symbol) {
+            try {
+                const response = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbol}`);
+                const data = await response.json();
+                return data.lastFundingRate;
+            } catch (error) {
+                console.error(`Funding rate error for ${symbol}:`, error);
+                return null;
+            }
+        }
+
+        function formatFundingRate(rate) {
+            if (!rate) return '-';
+            const percentage = (parseFloat(rate) * 100).toFixed(4);
+            const sign = percentage >= 0 ? '+' : '';
+            return sign + percentage + '%';
+        }
+
         function formatNumber(num) {
             if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
             if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
@@ -296,6 +314,15 @@
         function connectWS(symbol) {
             const ws = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@ticker`);
             trackedCoins[symbol].ws = ws;
+
+            // Funding rate'i al
+            getFundingRate(symbol).then(rate => {
+                const fundingEl = document.getElementById(`funding-${symbol}`);
+                if (fundingEl) {
+                    fundingEl.textContent = formatFundingRate(rate);
+                    fundingEl.className = `numeric-cell ${parseFloat(rate) >= 0 ? 'change-positive' : 'change-negative'}`;
+                }
+            });
 
             ws.onopen = () => updateStatus(symbol, 'Bağlı', 'connected');
             ws.onerror = () => updateStatus(symbol, 'Hata', 'disconnected');
@@ -351,6 +378,7 @@
                             <th>Durum</th>
                             <th>Fiyat</th>
                             <th>24s Değişim</th>
+                            <th>Funding Rate</th>
                             <th>24s Yüksek</th>
                             <th>24s Düşük</th>
                             <th>Hacim</th>
@@ -370,6 +398,7 @@
                     <td><span class="status connecting" id="status-${symbol}">Bağlanıyor...</span></td>
                     <td class="numeric-cell"><div class="price" id="price-${symbol}">$0.00</div></td>
                     <td class="numeric-cell" id="change-${symbol}">-</td>
+                    <td class="numeric-cell" id="funding-${symbol}">-</td>
                     <td class="numeric-cell" id="high-${symbol}">-</td>
                     <td class="numeric-cell" id="low-${symbol}">-</td>
                     <td class="numeric-cell" id="volume-${symbol}">-</td>
