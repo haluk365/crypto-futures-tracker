@@ -44,7 +44,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.5</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.7</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="addCoin()">Ekle</button>
@@ -83,12 +83,33 @@
             }
         };
         
-        const sv = () => localStorage.setItem('c', JSON.stringify(Object.keys(c)));
+        const sv = () => {
+            try {
+                localStorage.setItem('c', JSON.stringify(Object.keys(c)));
+                console.log('Veriler localStorage\'a kaydedildi');
+            } catch (error) {
+                console.error('localStorage kaydetme hatası:', error);
+                alert('Veriler kaydedilemedi. Tarayıcı depolama alanı dolu olabilir.');
+            }
+        };
+        
         const ld = () => {
-            const d = localStorage.getItem('c');
-            if (d) {
-                JSON.parse(d).forEach(s => c[s] = {w: null, l: 0});
-                return Object.keys(c).length > 0;
+            try {
+                const d = localStorage.getItem('c');
+                if (d) {
+                    const coins = JSON.parse(d);
+                    coins.forEach(s => c[s] = {w: null, l: 0});
+                    console.log(`${coins.length} coin localStorage\'dan yüklendi`);
+                    return coins.length > 0;
+                }
+            } catch (error) {
+                console.error('localStorage okuma hatası:', error);
+                // localStorage bozuksa temizle
+                try {
+                    localStorage.removeItem('c');
+                } catch (e) {
+                    console.error('localStorage temizleme hatası:', e);
+                }
             }
             return false;
         };
@@ -119,45 +140,77 @@
         };
         
         const cn = s => {
-            const w = new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
-            c[s].w = w;
-            
-            gf(s).then(r => {
-                const e = $(`f${s}`);
-                if (e) {
-                    e.textContent = ff(r);
-                    e.className = `numeric-cell ${(+r || 0) >= 0 ? 'change-positive' : 'change-negative'}`;
-                }
-            });
-            
-            w.onopen = () => st(s, 'Bağlı', 'connected');
-            w.onerror = () => st(s, 'Hata', 'disconnected');
-            w.onclose = () => st(s, 'Kesildi', 'disconnected');
-            
-            w.onmessage = e => {
-                try {
-                    const d = JSON.parse(e.data);
-                    const pe = $(`p${s}`);
-                    const he = $(`h${s}`);
-                    const ie = $(`i${s}`);
-                    const oe = $(`o${s}`);
-                    const ve = $(`v${s}`);
-                    
-                    if (pe) pe.textContent = fp(d.c);
-                    if (he) {
-                        const ch = +d.P;
-                        he.textContent = `${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%`;
-                        he.className = `numeric-cell ${ch >= 0 ? 'change-positive' : 'change-negative'}`;
+            try {
+                const w = new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
+                c[s].w = w;
+                
+                // Funding rate al (hata yakalama ile)
+                gf(s).then(r => {
+                    const e = $(`f${s}`);
+                    if (e) {
+                        e.textContent = ff(r);
+                        e.className = `numeric-cell ${(+r || 0) >= 0 ? 'change-positive' : 'change-negative'}`;
                     }
-                    if (ie) ie.textContent = fp(d.h);
-                    if (oe) oe.textContent = fp(d.l);
-                    if (ve) ve.textContent = fn(d.v);
+                }).catch(err => {
+                    console.error(`Funding rate hatası (${s}):`, err);
+                    const e = $(`f${s}`);
+                    if (e) e.textContent = 'Hata';
+                });
+                
+                w.onopen = () => {
+                    console.log(`WebSocket açıldı: ${s}`);
+                    st(s, 'Bağlı', 'connected');
+                };
+                
+                w.onerror = (error) => {
+                    console.error(`WebSocket hatası (${s}):`, error);
+                    st(s, 'Hata', 'disconnected');
+                };
+                
+                w.onclose = (event) => {
+                    console.log(`WebSocket kapandı (${s}):`, event.code, event.reason);
+                    st(s, 'Kesildi', 'disconnected');
                     
-                    c[s].l = +d.c;
-                } catch (err) {
-                    console.error(err);
-                }
-            };
+                    // 5 saniye sonra yeniden bağlanmayı dene
+                    if (c[s] && event.code !== 1000) { // 1000 = normal closure
+                        setTimeout(() => {
+                            if (c[s]) { // Coin hala listede mi?
+                                console.log(`Yeniden bağlanıyor: ${s}`);
+                                cn(s);
+                            }
+                        }, 5000);
+                    }
+                };
+                
+                w.onmessage = e => {
+                    try {
+                        const d = JSON.parse(e.data);
+                        const pe = $(`p${s}`);
+                        const he = $(`h${s}`);
+                        const ie = $(`i${s}`);
+                        const oe = $(`o${s}`);
+                        const ve = $(`v${s}`);
+                        
+                        if (pe) pe.textContent = fp(d.c);
+                        if (he) {
+                            const ch = +d.P;
+                            he.textContent = `${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%`;
+                            he.className = `numeric-cell ${ch >= 0 ? 'change-positive' : 'change-negative'}`;
+                        }
+                        if (ie) ie.textContent = fp(d.h);
+                        if (oe) oe.textContent = fp(d.l);
+                        if (ve) ve.textContent = fn(d.v);
+                        
+                        c[s].l = +d.c;
+                    } catch (err) {
+                        console.error(`Veri parse hatası (${s}):`, err);
+                    }
+                };
+                
+            } catch (error) {
+                console.error(`WebSocket oluşturma hatası (${s}):`, error);
+                st(s, 'Hata', 'disconnected');
+            }
         };
         
         function loadChart(s) {
@@ -266,32 +319,117 @@
             rs.forEach(row => tb.appendChild(row));
         }
         
-        window.onload = () => {
-            // Input elementinin varlığını kontrol et ve event listener ekle
-            setTimeout(() => {
-                const inp = document.getElementById('inp');
-                console.log('Input elementi:', inp); // Debug için
-                if (inp) {
-                    inp.focus();
-                    inp.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            addCoin();
-                        }
-                    });
-                    // Test için input'a yazabilir miyiz kontrol et
-                    inp.addEventListener('input', function() {
-                        console.log('Input değeri:', inp.value);
-                    });
-                } else {
-                    console.error('Input elementi bulunamadı!');
-                }
-            }, 100);
+        // KESIN ÇÖZÜM: Input Focus ve Event Management
+        let inputInitialized = false;
+        
+        function forceInitializeInput() {
+            const inp = document.getElementById('inp');
             
+            if (!inp) {
+                console.error('❌ Input elementi DOM\'da yok!');
+                return false;
+            }
+            
+            if (inputInitialized) {
+                console.log('✅ Input zaten initialize edildi');
+                return true;
+            }
+            
+            try {
+                // Test input erişimi
+                inp.value = '';
+                inp.disabled = false;
+                inp.readOnly = false;
+                
+                // Style kontrolü 
+                inp.style.pointerEvents = 'auto';
+                inp.style.display = 'block';
+                inp.style.visibility = 'visible';
+                
+                // Event listeners ekle
+                inp.addEventListener('keydown', function(e) {
+                    console.log('🔽 Keydown:', e.key);
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addCoin();
+                    }
+                }, true);
+                
+                inp.addEventListener('keypress', function(e) {
+                    console.log('⌨️ Keypress:', e.key);
+                }, true);
+                
+                inp.addEventListener('input', function(e) {
+                    console.log('📝 Input change:', e.target.value);
+                }, true);
+                
+                inp.addEventListener('focus', function() {
+                    console.log('🎯 Input focused');
+                }, true);
+                
+                inp.addEventListener('blur', function() {
+                    console.log('👀 Input blurred');
+                }, true);
+                
+                // Focus ver
+                setTimeout(() => {
+                    inp.focus();
+                    inp.click();
+                    console.log('✅ Input focus verildi');
+                }, 100);
+                
+                inputInitialized = true;
+                console.log('✅ Input başarıyla initialize edildi');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Input initialize hatası:', error);
+                return false;
+            }
+        }
+        
+        // Multiple initialization strategies
+        function initializeApp() {
+            console.log('🚀 App initialization başladı');
+            
+            // Input initialize et
+            if (!forceInitializeInput()) {
+                console.log('⏳ Input bulunamadı, 500ms sonra tekrar denenecek');
+                setTimeout(() => {
+                    if (!forceInitializeInput()) {
+                        console.log('⏳ 2. deneme, 1000ms sonra tekrar denenecek');
+                        setTimeout(() => {
+                            forceInitializeInput();
+                        }, 1000);
+                    }
+                }, 500);
+            }
+            
+            // Saved coins yükle
             if (ld()) {
                 up();
                 Object.keys(c).forEach(cn);
             }
-        };
+        }
+        
+        // Multiple DOM ready strategies
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+        
+        // Fallback
+        window.addEventListener('load', function() {
+            if (!inputInitialized) {
+                console.log('🔄 Window load fallback');
+                initializeApp();
+            }
+        });
+        
+        // Manual trigger for debugging
+        window.debugInput = forceInitializeInput;
         
         window.onbeforeunload = () => {
             Object.values(c).forEach(coin => coin.w?.close());
