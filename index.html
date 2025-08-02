@@ -88,13 +88,6 @@
             box-shadow: 0 4px 12px rgba(238, 90, 36, 0.4);
         }
 
-        .remove-btn {
-            background: linear-gradient(45deg, #ff4757, #c44569);
-            padding: 5px 10px;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-
         .coins-table-container {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -170,12 +163,10 @@
 
         .price.up {
             color: #00ff88;
-            animation: pulse-green 0.5s ease-in-out;
         }
 
         .price.down {
             color: #ff4757;
-            animation: pulse-red 0.5s ease-in-out;
         }
 
         .change-positive {
@@ -210,18 +201,6 @@
             font-family: 'Courier New', monospace;
         }
 
-        @keyframes pulse-green {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); color: #00ff88; }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes pulse-red {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); color: #ff4757; }
-            100% { transform: scale(1); }
-        }
-
         .no-coins {
             text-align: center;
             padding: 3rem;
@@ -238,12 +217,21 @@
                 font-size: 2rem;
             }
 
-            .coins-grid {
-                grid-template-columns: 1fr;
-            }
-
             .add-coin {
                 flex-direction: column;
+            }
+
+            .coins-table {
+                font-size: 0.85rem;
+            }
+
+            .coins-table th,
+            .coins-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .price {
+                font-size: 1.1rem;
             }
         }
     </style>
@@ -267,306 +255,195 @@
     </div>
 
     <script>
-        let futuresSymbols = [];
         let trackedCoins = {};
-
-        const coinInput = document.getElementById('coinInput');
-        const addBtn = document.getElementById('addBtn');
-        const coinsContainer = document.getElementById('coinsContainer');
-
-        // Binance Futures'da mevcut olan coinleri al
-        async function loadFuturesSymbols() {
-            try {
-                const response = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
-                const data = await response.json();
-                futuresSymbols = data.symbols
-                    .filter(symbol => symbol.status === 'TRADING')
-                    .map(symbol => symbol.symbol);
-                console.log(`${futuresSymbols.length} adet Futures coin yüklendi`);
-            } catch (error) {
-                console.error('Futures coin listesi alınamadı:', error);
-            }
-        }
-
-        function validateSymbol(symbol) {
-            if (futuresSymbols.length === 0) {
-                return true;
-            }
-            return futuresSymbols.includes(symbol);
+        
+        function formatPrice(price) {
+            const num = parseFloat(price);
+            if (num >= 1) return '$' + num.toFixed(2);
+            if (num >= 0.01) return '$' + num.toFixed(4);
+            return '$' + num.toFixed(8);
         }
 
         function formatNumber(num) {
-            if (num >= 1000000) {
-                return (num / 1000000).toFixed(2) + 'M';
-            } else if (num >= 1000) {
-                return (num / 1000).toFixed(2) + 'K';
-            }
+            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
             return parseFloat(num).toFixed(2);
         }
 
-        function formatPrice(price) {
-            const num = parseFloat(price);
-            if (num >= 1) {
-                return '$' + num.toFixed(2);
-            } else if (num >= 0.01) {
-                return '$' + num.toFixed(4);
-            } else {
-                return '$' + num.toFixed(8);
+        function saveCoins() {
+            localStorage.setItem('trackedCoins', JSON.stringify(Object.keys(trackedCoins)));
+        }
+
+        function loadCoins() {
+            const saved = localStorage.getItem('trackedCoins');
+            if (saved) {
+                JSON.parse(saved).forEach(symbol => {
+                    trackedCoins[symbol] = { ws: null, lastPrice: 0 };
+                });
+                return Object.keys(trackedCoins).length > 0;
+            }
+            return false;
+        }
+
+        function updateStatus(symbol, msg, type) {
+            const el = document.getElementById(`status-${symbol}`);
+            if (el) {
+                el.textContent = msg;
+                el.className = `status ${type}`;
             }
         }
 
-        function createCoinsTable() {
-            const table = document.createElement('table');
-            table.className = 'coins-table';
-            
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Coin</th>
-                        <th>Durum</th>
-                        <th>Fiyat</th>
-                        <th>24s Değişim</th>
-                        <th>24s Yüksek</th>
-                        <th>24s Düşük</th>
-                        <th>Hacim</th>
-                        <th>Son Güncelleme</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="coinsTableBody">
-                </tbody>
-            `;
-            
-            return table;
-        }
-
-        function createCoinRow(symbol) {
-            const row = document.createElement('tr');
-            row.id = `row-${symbol}`;
-            
-            row.innerHTML = `
-                <td>
-                    <div class="coin-name">${symbol}</div>
-                </td>
-                <td>
-                    <span class="status connecting" id="status-${symbol}">Bağlanıyor...</span>
-                </td>
-                <td class="numeric-cell">
-                    <div class="price" id="price-${symbol}">$0.00</div>
-                </td>
-                <td class="numeric-cell" id="change-${symbol}">-</td>
-                <td class="numeric-cell" id="high-${symbol}">-</td>
-                <td class="numeric-cell" id="low-${symbol}">-</td>
-                <td class="numeric-cell" id="volume-${symbol}">-</td>
-                <td class="numeric-cell" id="update-${symbol}">-</td>
-                <td>
-                    <button class="remove-btn" onclick="removeCoin('${symbol}')">Kaldır</button>
-                </td>
-            `;
-            
-            return row;
-        }
-
-        function updateCoinStatus(symbol, message, type) {
-            const statusElement = document.getElementById(`status-${symbol}`);
-            if (statusElement) {
-                statusElement.textContent = message;
-                statusElement.className = `status ${type}`;
-            }
-        }
-
-        function connectCoinWebSocket(symbol) {
-            const wsUrl = `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@ticker`;
-            const ws = new WebSocket(wsUrl);
-
+        function connectWS(symbol) {
+            const ws = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@ticker`);
             trackedCoins[symbol].ws = ws;
-            trackedCoins[symbol].lastPrice = 0;
 
-            ws.onopen = function() {
-                updateCoinStatus(symbol, 'Bağlı', 'connected');
-            };
-
-            ws.onmessage = function(event) {
+            ws.onopen = () => updateStatus(symbol, 'Bağlı', 'connected');
+            ws.onerror = () => updateStatus(symbol, 'Hata', 'disconnected');
+            ws.onclose = () => updateStatus(symbol, 'Kesildi', 'disconnected');
+            
+            ws.onmessage = (e) => {
                 try {
-                    const data = JSON.parse(event.data);
-                    updateCoinData(symbol, data);
-                } catch (error) {
-                    console.error(`${symbol} veri işleme hatası:`, error);
+                    const data = JSON.parse(e.data);
+                    const price = parseFloat(data.c);
+                    const change = parseFloat(data.P);
+                    
+                    const priceEl = document.getElementById(`price-${symbol}`);
+                    if (priceEl) {
+                        priceEl.textContent = formatPrice(data.c);
+                        priceEl.className = 'price';
+                        if (price > trackedCoins[symbol].lastPrice) {
+                            priceEl.classList.add('up');
+                        } else if (price < trackedCoins[symbol].lastPrice) {
+                            priceEl.classList.add('down');
+                        }
+                    }
+
+                    const changeEl = document.getElementById(`change-${symbol}`);
+                    if (changeEl) {
+                        changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                        changeEl.className = `numeric-cell ${change >= 0 ? 'change-positive' : 'change-negative'}`;
+                    }
+
+                    ['high', 'low'].forEach(key => {
+                        const el = document.getElementById(`${key}-${symbol}`);
+                        if (el) el.textContent = formatPrice(data[key === 'high' ? 'h' : 'l']);
+                    });
+
+                    const volEl = document.getElementById(`volume-${symbol}`);
+                    if (volEl) volEl.textContent = formatNumber(data.v);
+
+                    const timeEl = document.getElementById(`update-${symbol}`);
+                    if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('tr-TR');
+
+                    trackedCoins[symbol].lastPrice = price;
+                } catch (err) {
+                    console.error('Parse error:', err);
                 }
-            };
-
-            ws.onerror = function(error) {
-                console.error(`${symbol} WebSocket hatası:`, error);
-                updateCoinStatus(symbol, 'Hata', 'disconnected');
-            };
-
-            ws.onclose = function() {
-                updateCoinStatus(symbol, 'Kesildi', 'disconnected');
             };
         }
 
-        function updateCoinData(symbol, data) {
-            const currentPrice = parseFloat(data.c);
-            const change24h = parseFloat(data.P);
-            const changeAmount = parseFloat(data.p);
-            const lastPrice = trackedCoins[symbol].lastPrice;
+        function createTable() {
+            return `
+                <table class="coins-table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Durum</th>
+                            <th>Fiyat</th>
+                            <th>24s Değişim</th>
+                            <th>24s Yüksek</th>
+                            <th>24s Düşük</th>
+                            <th>Hacim</th>
+                            <th>Son Güncelleme</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            `;
+        }
 
-            // Fiyat elementi
-            const priceElement = document.getElementById(`price-${symbol}`);
-            if (priceElement) {
-                priceElement.className = 'price';
-                if (currentPrice > lastPrice) {
-                    priceElement.classList.add('up');
-                } else if (currentPrice < lastPrice) {
-                    priceElement.classList.add('down');
+        function createRow(symbol) {
+            return `
+                <tr id="row-${symbol}">
+                    <td><div class="coin-name">${symbol}</div></td>
+                    <td><span class="status connecting" id="status-${symbol}">Bağlanıyor...</span></td>
+                    <td class="numeric-cell"><div class="price" id="price-${symbol}">$0.00</div></td>
+                    <td class="numeric-cell" id="change-${symbol}">-</td>
+                    <td class="numeric-cell" id="high-${symbol}">-</td>
+                    <td class="numeric-cell" id="low-${symbol}">-</td>
+                    <td class="numeric-cell" id="volume-${symbol}">-</td>
+                    <td class="numeric-cell" id="update-${symbol}">-</td>
+                    <td><button class="remove-btn" onclick="removeCoin('${symbol}')">Kaldır</button></td>
+                </tr>
+            `;
+        }
+
+        function updateUI() {
+            const container = document.getElementById('coinsContainer');
+            const coinCount = Object.keys(trackedCoins).length;
+
+            if (coinCount === 0) {
+                container.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
+            } else {
+                if (!document.getElementById('tableBody')) {
+                    container.innerHTML = createTable();
                 }
-                priceElement.textContent = formatPrice(data.c);
+                
+                const tbody = document.getElementById('tableBody');
+                Object.keys(trackedCoins).forEach(symbol => {
+                    if (!document.getElementById(`row-${symbol}`)) {
+                        tbody.innerHTML += createRow(symbol);
+                    }
+                });
             }
-
-            // Değişim yüzdesi
-            const changeElement = document.getElementById(`change-${symbol}`);
-            if (changeElement) {
-                const changeText = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}% (${changeAmount >= 0 ? '+' : ''}${formatPrice(changeAmount)})`;
-                changeElement.textContent = changeText;
-                changeElement.className = `numeric-cell ${change24h >= 0 ? 'change-positive' : 'change-negative'}`;
-            }
-
-            // İstatistikler
-            const highElement = document.getElementById(`high-${symbol}`);
-            const lowElement = document.getElementById(`low-${symbol}`);
-            const volumeElement = document.getElementById(`volume-${symbol}`);
-            const updateElement = document.getElementById(`update-${symbol}`);
-
-            if (highElement) highElement.textContent = formatPrice(data.h);
-            if (lowElement) lowElement.textContent = formatPrice(data.l);
-            if (volumeElement) volumeElement.textContent = formatNumber(data.v);
-            if (updateElement) {
-                const now = new Date();
-                updateElement.textContent = now.toLocaleTimeString('tr-TR');
-            }
-
-            trackedCoins[symbol].lastPrice = currentPrice;
         }
 
         function addCoin() {
-            let symbol = coinInput.value.trim().toUpperCase();
+            let symbol = document.getElementById('coinInput').value.trim().toUpperCase();
+            if (!symbol) return alert('Lütfen bir coin adı girin!');
             
-            if (!symbol) {
-                alert('Lütfen bir coin adı girin!');
-                return;
-            }
+            if (!symbol.endsWith('USDT')) symbol += 'USDT';
+            
+            if (trackedCoins[symbol]) return alert(`${symbol} zaten takip ediliyor!`);
 
-            // Otomatik olarak USDT ekle
-            if (!symbol.endsWith('USDT')) {
-                symbol = symbol + 'USDT';
-            }
-
-            // Zaten takip ediliyor mu kontrol et
-            if (trackedCoins[symbol]) {
-                alert(`${symbol} zaten takip ediliyor!`);
-                return;
-            }
-
-            // Futures'da mevcut mu kontrol et
-            if (!validateSymbol(symbol)) {
-                alert(`${symbol} Binance Futures'da bulunamadı!`);
-                return;
-            }
-
-            // Coin'i ekle
-            trackedCoins[symbol] = {
-                ws: null,
-                lastPrice: 0
-            };
-
-            // UI'yi güncelle
+            trackedCoins[symbol] = { ws: null, lastPrice: 0 };
             updateUI();
-
-            // WebSocket bağlantısını kur
-            connectCoinWebSocket(symbol);
-
-            // Input'u temizle
-            coinInput.value = '';
+            connectWS(symbol);
+            saveCoins();
+            document.getElementById('coinInput').value = '';
         }
 
         function removeCoin(symbol) {
             if (trackedCoins[symbol]) {
-                // WebSocket bağlantısını kapat
-                if (trackedCoins[symbol].ws) {
-                    trackedCoins[symbol].ws.close();
-                }
-                
-                // Takip listesinden çıkar
+                if (trackedCoins[symbol].ws) trackedCoins[symbol].ws.close();
                 delete trackedCoins[symbol];
-                
-                // UI'yi güncelle
-                updateUI();
-            }
-        }
-
-        function updateUI() {
-            const noCoinsDiv = coinsContainer.querySelector('.no-coins');
-            
-            if (Object.keys(trackedCoins).length === 0) {
-                // Hiç coin yoksa "no-coins" mesajını göster
-                if (!noCoinsDiv) {
-                    coinsContainer.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
-                }
-            } else {
-                // Coinler varsa tabloyu oluştur
-                if (noCoinsDiv) {
-                    coinsContainer.innerHTML = '';
-                    const table = createCoinsTable();
-                    coinsContainer.appendChild(table);
-                }
-                
-                const tableBody = document.getElementById('coinsTableBody');
-                if (tableBody) {
-                    // Mevcut satırları kontrol et ve eksikleri ekle
-                    Object.keys(trackedCoins).forEach(symbol => {
-                        if (!document.getElementById(`row-${symbol}`)) {
-                            const row = createCoinRow(symbol);
-                            tableBody.appendChild(row);
-                        }
-                    });
-                    
-                    // Silinmiş satırları kaldır
-                    const existingRows = tableBody.querySelectorAll('tr');
-                    existingRows.forEach(row => {
-                        const symbol = row.id.replace('row-', '');
-                        if (!trackedCoins[symbol]) {
-                            row.remove();
-                        }
-                    });
-                }
+                document.getElementById(`row-${symbol}`)?.remove();
+                saveCoins();
+                if (Object.keys(trackedCoins).length === 0) updateUI();
             }
         }
 
         // Event listeners
-        addBtn.addEventListener('click', addCoin);
-        
-        coinInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addCoin();
-            }
-        });
+        document.getElementById('addBtn').onclick = addCoin;
+        document.getElementById('coinInput').onkeypress = (e) => {
+            if (e.key === 'Enter') addCoin();
+        };
 
-        // Sayfa yüklendiğinde
-        window.addEventListener('load', function() {
-            loadFuturesSymbols();
-        });
-
-        // Sayfa kapanırken tüm WebSocket bağlantılarını kapat
-        window.addEventListener('beforeunload', function() {
-            Object.values(trackedCoins).forEach(coin => {
-                if (coin.ws) {
-                    coin.ws.close();
-                }
-            });
-        });
-
-        // Global fonksiyon (remove butonları için)
+        // Global function
         window.removeCoin = removeCoin;
+
+        // Initialize
+        window.onload = () => {
+            if (loadCoins()) {
+                updateUI();
+                Object.keys(trackedCoins).forEach(connectWS);
+            }
+        };
+
+        window.onbeforeunload = () => {
+            Object.values(trackedCoins).forEach(coin => coin.ws?.close());
+        };
     </script>
 </body>
 </html>
