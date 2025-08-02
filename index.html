@@ -232,11 +232,16 @@
             box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
         }
 
-        .no-data {
-            text-align: center;
-            padding: 40px;
+        .volume-cell {
+            font-size: 1rem;
             color: #666;
-            font-size: 1.2rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .loading-row {
+            text-align: center;
+            padding: 20px;
+            color: #666;
             font-style: italic;
         }
 
@@ -302,12 +307,6 @@
             <button class="btn btn-secondary" onclick="disconnectWebSocket()">❌ Bağlantıyı Kes</button>
         </div>
 
-        <div class="symbol-input">
-            <input type="text" id="symbolInput" placeholder="Futures sembolü girin (örn: BTCUSDT)" 
-                   onkeypress="handleKeyPress(event)">
-            <button class="btn btn-primary" onclick="addSymbol()">➕ Futures Ekle</button>
-        </div>
-
         <div id="errorMsg" class="error-msg" style="display: none;"></div>
         
         <div class="table-container">
@@ -317,8 +316,8 @@
                         <th>📊 Sembol</th>
                         <th>💰 Fiyat (USDT)</th>
                         <th>📈 24s Değişim</th>
+                        <th>📊 Hacim (24s)</th>
                         <th>⚡ Funding Rate</th>
-                        <th>🗑️ İşlem</th>
                     </tr>
                 </thead>
                 <tbody id="cryptoTableBody">
@@ -326,7 +325,7 @@
                 </tbody>
             </table>
             <div id="noDataMessage" class="no-data" style="display: none;">
-                Henüz takip edilen futures coin yok. Yukarıdan coin ekleyin! 📈
+                Futures veriler yükleniyor... ⏳
             </div>
         </div>
     </div>
@@ -394,15 +393,8 @@
                     updateStatus(true);
                     console.log('Futures WebSocket bağlantısı kuruldu');
                     
-                    // Futures sembollerini yükle
+                    // Futures sembollerini yükle ve tablo oluştur
                     await loadFuturesSymbols();
-                    
-                    // Varsayılan sembolleri ekle (sadece futures olanları)
-                    defaultSymbols.forEach(symbol => {
-                        if (availableFuturesSymbols.has(symbol)) {
-                            addSymbolToTrack(symbol);
-                        }
-                    });
 
                     // Funding rate verilerini al
                     fetchFundingRates();
@@ -415,7 +407,7 @@
                         // Eğer dizi ise (tüm futures semboller)
                         if (Array.isArray(data)) {
                             data.forEach(ticker => {
-                                if (subscribedSymbols.has(ticker.s) && availableFuturesSymbols.has(ticker.s)) {
+                                if (allFuturesSymbols.has(ticker.s)) {
                                     updateCryptoData(ticker);
                                 }
                             });
@@ -456,7 +448,7 @@
                 const data = await response.json();
                 
                 data.forEach(item => {
-                    if (subscribedSymbols.has(item.symbol)) {
+                    if (allFuturesSymbols.has(item.symbol)) {
                         fundingRates[item.symbol] = {
                             rate: parseFloat(item.lastFundingRate) * 100,
                             nextTime: new Date(parseInt(item.nextFundingTime))
@@ -475,58 +467,13 @@
                 symbol: ticker.s,
                 price: parseFloat(ticker.c),
                 change: parseFloat(ticker.P),
-                volume: parseFloat(ticker.v)
+                volume: parseFloat(ticker.q) // Quote asset volume (USDT cinsinden)
             };
             
             updateCryptoRow(ticker.s);
         }
 
-        function addSymbol() {
-            const input = document.getElementById('symbolInput');
-            const symbol = input.value.toUpperCase().trim();
-            
-            if (!symbol) {
-                showError('Lütfen bir futures sembolü girin!');
-                return;
-            }
-
-            // Futures sembolü kontrolü
-            if (!availableFuturesSymbols.has(symbol)) {
-                showError(`${symbol} futures piyasasında mevcut değil! Sadece futures coinleri eklenebilir.`);
-                return;
-            }
-
-            if (subscribedSymbols.has(symbol)) {
-                showError('Bu futures sembolü zaten takip ediliyor!');
-                return;
-            }
-
-            addSymbolToTrack(symbol);
-            input.value = '';
-        }
-
-        function addSymbolToTrack(symbol) {
-            subscribedSymbols.add(symbol);
-            createCryptoRow(symbol);
-            
-            // Funding rate verilerini güncelle
-            setTimeout(() => {
-                fetchFundingRates();
-            }, 1000);
-        }
-
-        function removeSymbol(symbol) {
-            subscribedSymbols.delete(symbol);
-            delete cryptoData[symbol];
-            delete fundingRates[symbol];
-            
-            const row = document.getElementById(`row-${symbol}`);
-            if (row) {
-                row.remove();
-            }
-            
-            updateNoDataMessage();
-        }
+        // Sembol ekleme/kaldırma fonksiyonları kaldırıldı - artık tüm futures coinler otomatik listeleniyor
 
         function createCryptoRow(symbol) {
             const tbody = document.getElementById('cryptoTableBody');
@@ -539,14 +486,11 @@
                 <td class="change-cell" id="change-${symbol}">
                     <span class="change-positive">--%</span>
                 </td>
+                <td class="volume-cell" id="volume-${symbol}">--</td>
                 <td class="funding-cell" id="funding-${symbol}">--</td>
-                <td>
-                    <button class="remove-btn" onclick="removeSymbol('${symbol}')" title="Kaldır">×</button>
-                </td>
             `;
             
             tbody.appendChild(row);
-            updateNoDataMessage();
         }
 
         function updateCryptoRow(symbol) {
@@ -596,7 +540,7 @@
         }
 
         function updateAllRows() {
-            subscribedSymbols.forEach(symbol => {
+            allFuturesSymbols.forEach(symbol => {
                 updateCryptoRow(symbol);
             });
         }
