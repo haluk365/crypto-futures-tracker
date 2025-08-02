@@ -220,12 +220,10 @@
                     const highEl = $(`high-${s}`);
                     const lowEl = $(`low-${s}`);
                     const volEl = $(`vol-${s}`);
-                    const timeEl = $(`time-${s}`);
 
                     if (highEl) highEl.textContent = formatPrice(d.h);
                     if (lowEl) lowEl.textContent = formatPrice(d.l);
                     if (volEl) volEl.textContent = formatNum(d.v);
-                    if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('tr-TR');
 
                     coins[s].last = price;
                 } catch (err) {
@@ -239,15 +237,14 @@
                 <table class="coins-table">
                     <thead>
                         <tr>
-                            <th class="sortable" onclick="sort('coin')">Coin</th>
+                            <th class="sortable" onclick="sort('coin')">Sembol</th>
                             <th>Durum</th>
                             <th class="sortable" onclick="sort('price')">Fiyat</th>
-                            <th class="sortable" onclick="sort('change')">24s Değişim</th>
-                            <th class="sortable" onclick="sort('funding')">Funding Rate</th>
+                            <th class="sortable" onclick="sort('change')">24s %</th>
+                            <th class="sortable" onclick="sort('funding')">Fund</th>
                             <th class="sortable" onclick="sort('high')">24s Yüksek</th>
                             <th class="sortable" onclick="sort('low')">24s Düşük</th>
                             <th class="sortable" onclick="sort('vol')">Hacim</th>
-                            <th>Son Güncelleme</th>
                             <th>İşlem</th>
                         </tr>
                     </thead>
@@ -267,7 +264,6 @@
                     <td class="numeric-cell" id="high-${s}">-</td>
                     <td class="numeric-cell" id="low-${s}">-</td>
                     <td class="numeric-cell" id="vol-${s}">-</td>
-                    <td class="numeric-cell" id="time-${s}">-</td>
                     <td><button class="remove-btn" onclick="remove('${s}')">Kaldır</button></td>
                 </tr>
             `;
