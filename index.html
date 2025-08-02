@@ -5,38 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Binance Futures Takipçi</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font: 14px 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1e3c72, #2a5298); min-height: 100vh; padding: 2rem; color: white; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 2rem; margin-bottom: 2rem; text-align: center; }
-        h1 { margin-bottom: 1.5rem; font-size: 2.5rem; background: linear-gradient(45deg, #ffd700, #ffed4e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .add-coin { display: flex; gap: 10px; max-width: 400px; margin: 0 auto; }
-        input { flex: 1; padding: 12px; border: none; border-radius: 10px; background: rgba(255, 255, 255, 0.2); color: white; font-size: 16px; }
-        input::placeholder { color: rgba(255, 255, 255, 0.7); }
-        input:focus { outline: none; background: rgba(255, 255, 255, 0.3); }
-        button { padding: 12px 24px; border: none; border-radius: 10px; background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; cursor: pointer; font-weight: bold; }
-        button:hover { transform: translateY(-2px); }
-        .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 1.5rem; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: rgba(255, 255, 255, 0.1); padding: 1rem; text-align: left; color: #ffd700; border-bottom: 2px solid rgba(255, 255, 255, 0.2); font-weight: bold; }
-        td { padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        tr:hover { background: rgba(255, 255, 255, 0.05); }
-        .coin-name { font-weight: bold; color: #ffd700; }
-        .status { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-align: center; min-width: 60px; display: inline-block; }
-        .status.connected { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
-        .status.disconnected { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
-        .status.connecting { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
-        .change-positive { color: #00ff88; }
-        .change-negative { color: #ff4757; }
-        .remove-btn { background: linear-gradient(45deg, #ff4757, #c44569); padding: 6px 12px; font-size: 11px; border: none; border-radius: 6px; color: white; cursor: pointer; }
-        .numeric-cell { text-align: right; }
-        .no-coins { text-align: center; padding: 3rem; opacity: 0.7; font-size: 1.2rem; }
-        .sortable { cursor: pointer; user-select: none; position: relative; }
-        .sortable:hover { background: rgba(255, 255, 255, 0.2); }
-        .sortable::after { content: '↕️'; position: absolute; right: 5px; opacity: 0.5; }
-        .sortable.asc::after { content: '↑'; opacity: 1; color: #00ff88; }
-        .sortable.desc::after { content: '↓'; opacity: 1; color: #ff4757; }
-        @media (max-width: 768px) { body { padding: 1rem; } h1 { font-size: 2rem; } .add-coin { flex-direction: column; } }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font:14px 'Segoe UI',sans-serif;background:linear-gradient(135deg,#1e3c72,#2a5298);min-height:100vh;padding:2rem;color:white}
+        .container{max-width:1200px;margin:0 auto}
+        .header{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:2rem;margin-bottom:2rem;text-align:center}
+        .empty-box{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:15px;padding:1.5rem;margin-bottom:2rem;min-height:60px}
+        h1{margin-bottom:1.5rem;font-size:2.5rem;background:linear-gradient(45deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .add-coin{display:flex;gap:10px;max-width:400px;margin:0 auto}
+        input{flex:1;padding:12px;border:none;border-radius:10px;background:rgba(255,255,255,0.2);color:white;font-size:16px}
+        input::placeholder{color:rgba(255,255,255,0.7)}
+        input:focus{outline:none;background:rgba(255,255,255,0.3)}
+        button{padding:12px 24px;border:none;border-radius:10px;background:linear-gradient(45deg,#ff6b6b,#ee5a24);color:white;cursor:pointer;font-weight:bold}
+        button:hover{transform:translateY(-2px)}
+        .table-container{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:15px;padding:1.5rem;overflow-x:auto}
+        table{width:100%;border-collapse:collapse}
+        th{background:rgba(255,255,255,0.1);padding:1rem;text-align:left;color:#ffd700;border-bottom:2px solid rgba(255,255,255,0.2);font-weight:bold}
+        td{padding:1rem;border-bottom:1px solid rgba(255,255,255,0.1)}
+        tr:hover{background:rgba(255,255,255,0.05)}
+        .coin-name{font-weight:bold;color:#ffd700}
+        .status{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:bold;text-align:center;min-width:60px;display:inline-block}
+        .status.connected{background:rgba(0,255,136,0.2);color:#00ff88}
+        .status.disconnected{background:rgba(255,71,87,0.2);color:#ff4757}
+        .status.connecting{background:rgba(255,215,0,0.2);color:#ffd700}
+        .change-positive{color:#00ff88}
+        .change-negative{color:#ff4757}
+        .remove-btn{background:linear-gradient(45deg,#ff4757,#c44569);padding:6px 12px;font-size:11px;border:none;border-radius:6px;color:white;cursor:pointer}
+        .numeric-cell{text-align:right}
+        .no-coins{text-align:center;padding:3rem;opacity:0.7;font-size:1.2rem}
+        .sortable{cursor:pointer;user-select:none;position:relative}
+        .sortable:hover{background:rgba(255,255,255,0.2)}
+        .sortable::after{content:'↕️';position:absolute;right:5px;opacity:0.5}
+        .sortable.asc::after{content:'↑';opacity:1;color:#00ff88}
+        .sortable.desc::after{content:'↓';opacity:1;color:#ff4757}
+        @media (max-width:768px){body{padding:1rem}h1{font-size:2rem}.add-coin{flex-direction:column}}
     </style>
 </head>
 <body>
@@ -44,200 +45,94 @@
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
             <div class="add-coin">
-                <input type="text" id="input" placeholder="Coin adı (örn: BTC)">
+                <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="add()">Ekle</button>
             </div>
         </div>
-        <div class="table-container" id="container">
+        <div class="empty-box"></div>
+        <div class="table-container" id="cont">
             <div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>
         </div>
     </div>
 
     <script>
-        let coins = {}, sort = { col: null, dir: 'asc' };
-        const $ = id => document.getElementById(id);
-
-        const fmt = {
-            price: p => {
-                const n = +p;
-                return '$' + (n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(4) : n.toFixed(8));
-            },
-            num: n => n >= 1e6 ? (n/1e6).toFixed(2) + 'M' : n >= 1000 ? (n/1000).toFixed(2) + 'K' : (+n).toFixed(2),
-            fund: r => r ? ((+r * 100).toFixed(4) >= 0 ? '+' : '') + (+r * 100).toFixed(4) + '%' : '-'
-        };
-
-        const api = {
-            funding: async s => {
-                try {
-                    const res = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${s}`);
-                    return (await res.json()).lastFundingRate;
-                } catch { return null; }
-            }
-        };
-
-        const storage = {
-            save: () => localStorage.setItem('coins', JSON.stringify(Object.keys(coins))),
-            load: () => {
-                const saved = localStorage.getItem('coins');
-                if (saved) {
-                    JSON.parse(saved).forEach(s => coins[s] = { ws: null, last: 0 });
-                    return Object.keys(coins).length > 0;
-                }
-                return false;
-            }
-        };
-
-        const ui = {
-            status: (s, msg, type) => {
-                const el = $(`st-${s}`);
-                if (el) { el.textContent = msg; el.className = `status ${type}`; }
-            },
-            update: () => {
-                const container = $('container');
-                if (!Object.keys(coins).length) {
-                    container.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
-                } else {
-                    if (!$('tbody')) container.innerHTML = ui.table();
-                    const tbody = $('tbody');
-                    Object.keys(coins).forEach(s => {
-                        if (!$(`row-${s}`)) tbody.innerHTML += ui.row(s);
-                    });
-                }
-            },
-            table: () => `
-                <table>
-                    <thead><tr>
-                        <th class="sortable" onclick="sortBy('coin')">Sembol</th>
-                        <th>Durum</th>
-                        <th class="sortable" onclick="sortBy('price')">Fiyat</th>
-                        <th class="sortable" onclick="sortBy('change')">24s %</th>
-                        <th class="sortable" onclick="sortBy('funding')">Fund</th>
-                        <th class="sortable" onclick="sortBy('high')">24s Yüksek</th>
-                        <th class="sortable" onclick="sortBy('low')">24s Düşük</th>
-                        <th class="sortable" onclick="sortBy('vol')">Hacim</th>
-                        <th>İşlem</th>
-                    </tr></thead>
-                    <tbody id="tbody"></tbody>
-                </table>`,
-            row: s => `
-                <tr id="row-${s}">
-                    <td><div class="coin-name">${s}</div></td>
-                    <td><span class="status connecting" id="st-${s}">Bağlanıyor...</span></td>
-                    <td class="numeric-cell"><div id="pr-${s}">$0.00</div></td>
-                    <td class="numeric-cell" id="ch-${s}">-</td>
-                    <td class="numeric-cell" id="fu-${s}">-</td>
-                    <td class="numeric-cell" id="hi-${s}">-</td>
-                    <td class="numeric-cell" id="lo-${s}">-</td>
-                    <td class="numeric-cell" id="vo-${s}">-</td>
-                    <td><button class="remove-btn" onclick="remove('${s}')">Kaldır</button></td>
-                </tr>`
-        };
-
-        const ws = {
-            connect: s => {
-                const socket = new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
-                coins[s].ws = socket;
-
-                api.funding(s).then(r => {
-                    const el = $(`fu-${s}`);
-                    if (el) {
-                        el.textContent = fmt.fund(r);
-                        el.className = `numeric-cell ${(+r || 0) >= 0 ? 'change-positive' : 'change-negative'}`;
-                    }
+        let c={},s={col:null,dir:'asc'};
+        const $=i=>document.getElementById(i);
+        const fp=p=>{const n=+p;return '$'+(n>=1?n.toFixed(2):n>=0.01?n.toFixed(4):n.toFixed(8))};
+        const fn=n=>n>=1e6?(n/1e6).toFixed(2)+'M':n>=1000?(n/1000).toFixed(2)+'K':(+n).toFixed(2);
+        const ff=r=>r?((+r*100).toFixed(4)>=0?'+':'')+(+r*100).toFixed(4)+'%':'-';
+        
+        const gf=async s=>{try{const r=await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${s}`);return(await r.json()).lastFundingRate}catch{return null}};
+        const sv=()=>localStorage.setItem('c',JSON.stringify(Object.keys(c)));
+        const ld=()=>{const d=localStorage.getItem('c');if(d){JSON.parse(d).forEach(s=>c[s]={w:null,l:0});return Object.keys(c).length>0}return false};
+        const st=(s,m,t)=>{const e=$(`s${s}`);if(e){e.textContent=m;e.className=`status ${t}`}};
+        
+        const up=()=>{
+            const ct=$('cont');
+            if(!Object.keys(c).length){
+                ct.innerHTML='<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
+            }else{
+                if(!$('tb'))ct.innerHTML=`<table><thead><tr><th class="sortable" onclick="sb('coin')">Sembol</th><th>Durum</th><th class="sortable" onclick="sb('price')">Fiyat</th><th class="sortable" onclick="sb('change')">24s %</th><th class="sortable" onclick="sb('funding')">Fund</th><th class="sortable" onclick="sb('high')">24s Yüksek</th><th class="sortable" onclick="sb('low')">24s Düşük</th><th class="sortable" onclick="sb('vol')">Hacim</th><th>İşlem</th></tr></thead><tbody id="tb"></tbody></table>`;
+                const tb=$('tb');
+                Object.keys(c).forEach(s=>{
+                    if(!$(`r${s}`))tb.innerHTML+=`<tr id="r${s}"><td><div class="coin-name">${s}</div></td><td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td><td class="numeric-cell"><div id="p${s}">$0.00</div></td><td class="numeric-cell" id="h${s}">-</td><td class="numeric-cell" id="f${s}">-</td><td class="numeric-cell" id="i${s}">-</td><td class="numeric-cell" id="o${s}">-</td><td class="numeric-cell" id="v${s}">-</td><td><button class="remove-btn" onclick="rm('${s}')">Kaldır</button></td></tr>`
                 });
-
-                socket.onopen = () => ui.status(s, 'Bağlı', 'connected');
-                socket.onerror = () => ui.status(s, 'Hata', 'disconnected');
-                socket.onclose = () => ui.status(s, 'Kesildi', 'disconnected');
-                
-                socket.onmessage = e => {
-                    try {
-                        const d = JSON.parse(e.data);
-                        const els = {
-                            pr: $(`pr-${s}`), ch: $(`ch-${s}`), hi: $(`hi-${s}`),
-                            lo: $(`lo-${s}`), vo: $(`vo-${s}`)
-                        };
-
-                        if (els.pr) els.pr.textContent = fmt.price(d.c);
-                        if (els.ch) {
-                            const change = +d.P;
-                            els.ch.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-                            els.ch.className = `numeric-cell ${change >= 0 ? 'change-positive' : 'change-negative'}`;
-                        }
-                        if (els.hi) els.hi.textContent = fmt.price(d.h);
-                        if (els.lo) els.lo.textContent = fmt.price(d.l);
-                        if (els.vo) els.vo.textContent = fmt.num(d.v);
-
-                        coins[s].last = +d.c;
-                    } catch (err) { console.error('Parse error:', err); }
-                };
             }
         };
-
-        function sortBy(col) {
-            const tbody = $('tbody');
-            if (!tbody) return;
-
-            sort.dir = sort.col === col ? (sort.dir === 'asc' ? 'desc' : 'asc') : 'asc';
-            sort.col = col;
-
-            document.querySelectorAll('.sortable').forEach(th => th.classList.remove('asc', 'desc'));
-            document.querySelectorAll('.sortable').forEach(th => {
-                if (th.getAttribute('onclick')?.includes(`'${col}'`)) th.classList.add(sort.dir);
+        
+        const cn=s=>{
+            const w=new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
+            c[s].w=w;
+            gf(s).then(r=>{const e=$(`f${s}`);if(e){e.textContent=ff(r);e.className=`numeric-cell ${(+r||0)>=0?'change-positive':'change-negative'}`}});
+            w.onopen=()=>st(s,'Bağlı','connected');
+            w.onerror=()=>st(s,'Hata','disconnected');
+            w.onclose=()=>st(s,'Kesildi','disconnected');
+            w.onmessage=e=>{
+                try{
+                    const d=JSON.parse(e.data);
+                    const pe=$(`p${s}`),he=$(`h${s}`),ie=$(`i${s}`),oe=$(`o${s}`),ve=$(`v${s}`);
+                    if(pe)pe.textContent=fp(d.c);
+                    if(he){const ch=+d.P;he.textContent=`${ch>=0?'+':''}${ch.toFixed(2)}%`;he.className=`numeric-cell ${ch>=0?'change-positive':'change-negative'}`}
+                    if(ie)ie.textContent=fp(d.h);
+                    if(oe)oe.textContent=fp(d.l);
+                    if(ve)ve.textContent=fn(d.v);
+                    c[s].l=+d.c;
+                }catch(err){console.error(err)}
+            };
+        };
+        
+        function sb(col){
+            const tb=$('tb');if(!tb)return;
+            s.dir=s.col===col?(s.dir==='asc'?'desc':'asc'):'asc';s.col=col;
+            document.querySelectorAll('.sortable').forEach(th=>th.classList.remove('asc','desc'));
+            document.querySelectorAll('.sortable').forEach(th=>{if(th.getAttribute('onclick')?.includes(`'${col}'`))th.classList.add(s.dir)});
+            const rs=Array.from(tb.children);
+            const ci={price:2,change:3,funding:4,high:5,low:6,vol:7}[col];
+            rs.sort((a,b)=>{
+                if(col==='coin'){const r=a.cells[0].textContent.trim().localeCompare(b.cells[0].textContent.trim());return s.dir==='asc'?r:-r}
+                let vA=+(a.cells[ci].textContent.replace(/[\$,+%]/g,'')||0);let vB=+(b.cells[ci].textContent.replace(/[\$,+%]/g,'')||0);
+                if(col==='vol'){const tA=a.cells[ci].textContent,tB=b.cells[ci].textContent;if(tA.includes('M'))vA*=1e6;else if(tA.includes('K'))vA*=1000;if(tB.includes('M'))vB*=1e6;else if(tB.includes('K'))vB*=1000}
+                return s.dir==='asc'?vA-vB:vB-vA;
             });
-
-            const rows = Array.from(tbody.children);
-            const colIdx = { price: 2, change: 3, funding: 4, high: 5, low: 6, vol: 7 }[col];
-            
-            rows.sort((a, b) => {
-                if (col === 'coin') {
-                    const result = a.cells[0].textContent.trim().localeCompare(b.cells[0].textContent.trim());
-                    return sort.dir === 'asc' ? result : -result;
-                }
-                
-                let vA = +(a.cells[colIdx].textContent.replace(/[\$,+%]/g, '') || 0);
-                let vB = +(b.cells[colIdx].textContent.replace(/[\$,+%]/g, '') || 0);
-                
-                if (col === 'vol') {
-                    const tA = a.cells[colIdx].textContent, tB = b.cells[colIdx].textContent;
-                    if (tA.includes('M')) vA *= 1e6; else if (tA.includes('K')) vA *= 1000;
-                    if (tB.includes('M')) vB *= 1e6; else if (tB.includes('K')) vB *= 1000;
-                }
-                
-                return sort.dir === 'asc' ? vA - vB : vB - vA;
-            });
-
-            tbody.innerHTML = '';
-            rows.forEach(row => tbody.appendChild(row));
+            tb.innerHTML='';rs.forEach(row=>tb.appendChild(row));
         }
-
-        function add() {
-            let s = $('input').value.trim().toUpperCase();
-            if (!s) return alert('Lütfen bir coin adı girin!');
-            if (!s.endsWith('USDT')) s += 'USDT';
-            if (coins[s]) return alert(`${s} zaten takip ediliyor!`);
-            if (Object.keys(coins).length >= 20) return alert('Maksimum 20 coin takip edebilirsiniz!');
-
-            coins[s] = { ws: null, last: 0 };
-            ui.update();
-            ws.connect(s);
-            storage.save();
-            $('input').value = '';
+        
+        function add(){
+            let s=$('inp').value.trim().toUpperCase();
+            if(!s)return alert('Lütfen bir coin adı girin!');
+            if(!s.endsWith('USDT'))s+='USDT';
+            if(c[s])return alert(`${s} zaten takip ediliyor!`);
+            if(Object.keys(c).length>=20)return alert('Maksimum 20 coin takip edebilirsiniz!');
+            c[s]={w:null,l:0};up();cn(s);sv();$('inp').value='';
         }
-
-        function remove(s) {
-            if (coins[s]) {
-                coins[s].ws?.close();
-                delete coins[s];
-                $(`row-${s}`).remove();
-                storage.save();
-                if (!Object.keys(coins).length) ui.update();
-            }
+        
+        function rm(s){
+            if(c[s]){c[s].w?.close();delete c[s];$(`r${s}`).remove();sv();if(!Object.keys(c).length)up()}
         }
-
-        $('input').onkeypress = e => e.key === 'Enter' && add();
-        window.onload = () => storage.load() && (ui.update(), Object.keys(coins).forEach(ws.connect));
-        window.onbeforeunload = () => Object.values(coins).forEach(c => c.ws?.close());
+        
+        $('inp').onkeypress=e=>e.key==='Enter'&&add();
+        window.onload=()=>ld()&&(up(),Object.keys(c).forEach(cn));
+        window.onbeforeunload=()=>Object.values(c).forEach(c=>c.w?.close());
     </script>
 </body>
 </html>
