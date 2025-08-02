@@ -196,28 +196,7 @@
             100% { transform: scale(1); }
         }
 
-        .popular-coins {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 1rem;
-            justify-content: center;
-        }
 
-        .coin-button {
-            padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 20px;
-            color: white;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .coin-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
     </style>
 </head>
 <body>
@@ -230,14 +209,7 @@
                 <button id="connectBtn">Bağlan</button>
             </div>
             
-            <div class="popular-coins">
-                <button class="coin-button" onclick="selectCoin('BTCUSDT')">BTC</button>
-                <button class="coin-button" onclick="selectCoin('ETHUSDT')">ETH</button>
-                <button class="coin-button" onclick="selectCoin('BNBUSDT')">BNB</button>
-                <button class="coin-button" onclick="selectCoin('ADAUSDT')">ADA</button>
-                <button class="coin-button" onclick="selectCoin('SOLUSDT')">SOL</button>
-                <button class="coin-button" onclick="selectCoin('DOGEUSDT')">DOGE</button>
-            </div>
+
         </div>
 
         <div class="status" id="status">Bağlantı bekleniyor...</div>
@@ -272,6 +244,7 @@
         let ws = null;
         let currentSymbol = '';
         let lastPrice = 0;
+        let futuresSymbols = [];
 
         const coinInput = document.getElementById('coinInput');
         const connectBtn = document.getElementById('connectBtn');
@@ -285,8 +258,28 @@
         const volume24h = document.getElementById('volume24h');
         const lastUpdate = document.getElementById('lastUpdate');
 
-        function selectCoin(symbol) {
-            coinInput.value = symbol;
+
+
+        // Binance Futures'da mevcut olan coinleri al
+        async function loadFuturesSymbols() {
+            try {
+                const response = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo');
+                const data = await response.json();
+                futuresSymbols = data.symbols
+                    .filter(symbol => symbol.status === 'TRADING')
+                    .map(symbol => symbol.symbol);
+                console.log(`${futuresSymbols.length} adet Futures coin yüklendi`);
+            } catch (error) {
+                console.error('Futures coin listesi alınamadı:', error);
+                updateStatus('Coin listesi yüklenirken hata oluştu', 'disconnected');
+            }
+        }
+
+        function validateSymbol(symbol) {
+            if (futuresSymbols.length === 0) {
+                return true; // Liste henüz yüklenmediyse geç
+            }
+            return futuresSymbols.includes(symbol);
         }
 
         function formatNumber(num) {
@@ -319,6 +312,12 @@
             
             if (!symbol) {
                 updateStatus('Lütfen bir coin adı girin!', 'disconnected');
+                return;
+            }
+
+            // Coin'in Futures'da mevcut olup olmadığını kontrol et
+            if (!validateSymbol(symbol)) {
+                updateStatus(`${symbol} Binance Futures'da bulunamadı!`, 'disconnected');
                 return;
             }
 
@@ -407,9 +406,11 @@
             }
         });
 
-        // Sayfa yüklendiğinde otomatik bağlan
+        // Sayfa yüklendiğinde Futures coin listesini yükle ve otomatik bağlan
         window.addEventListener('load', function() {
-            setTimeout(connectWebSocket, 500);
+            loadFuturesSymbols().then(() => {
+                setTimeout(connectWebSocket, 500);
+            });
         });
 
         // Sayfa kapanırken WebSocket bağlantısını kapat
