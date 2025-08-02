@@ -44,7 +44,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 2.0</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 2.1</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="addCoin()">Ekle</button>
@@ -65,23 +65,26 @@
     <script>
         let c = {};
         let s = {col: null, dir: 'asc'};
+        let rsiCache = new Map();
+        let inputInitialized = false;
         
         const $ = i => document.getElementById(i);
+        
+        // Format functions
         const fp = p => {
             const n = +p;
             return '$' + (n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(4) : n.toFixed(8));
-        const gf = async s => {
+        };
         const fn = n => n >= 1e6 ? (n/1e6).toFixed(2) + 'M' : n >= 1000 ? (n/1000).toFixed(2) + 'K' : (+n).toFixed(2);
         const ff = r => r ? ((+r * 100).toFixed(4) >= 0 ? '+' : '') + (+r * 100).toFixed(4) + '%' : '-';
         
-        // RSI hesaplama fonksiyonu
+        // RSI calculation
         const calculateRSI = (closes, period = 14) => {
             if (closes.length < period + 1) return null;
             
             let gains = 0;
             let losses = 0;
             
-            // İlk period için ortalama hesapla
             for (let i = 1; i <= period; i++) {
                 const change = closes[i] - closes[i - 1];
                 if (change >= 0) {
@@ -94,7 +97,6 @@
             let avgGain = gains / period;
             let avgLoss = losses / period;
             
-            // Smoothed RSI hesaplama
             for (let i = period + 1; i < closes.length; i++) {
                 const change = closes[i] - closes[i - 1];
                 
@@ -112,60 +114,38 @@
             return 100 - (100 / (1 + rs));
         };
         
-        // RSI veri cache (5 dakika)
-        const rsiCache = new Map();
-        
-        // RSI verisini al ve hesapla
+        // RSI data fetch
         const getRSI = async (symbol) => {
-            const cacheKey = symbol;
             const now = Date.now();
             
-            // Cache kontrolü (5 dakika = 300000ms)
-            if (rsiCache.has(cacheKey)) {
-                const cached = rsiCache.get(cacheKey);
+            if (rsiCache.has(symbol)) {
+                const cached = rsiCache.get(symbol);
                 if (now - cached.timestamp < 300000) {
-                    console.log(`📊 RSI cache hit: ${symbol} = ${cached.value.toFixed(1)}`);
                     return cached.value;
                 }
             }
             
             try {
-                console.log(`📈 RSI hesaplanıyor: ${symbol}`);
-                
-                // 15 dakikalık klines al (RSI-14 için 15 adet yeterli)
                 const response = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&limit=16`);
                 const klines = await response.json();
                 
-                if (!klines || klines.length < 15) {
-                    console.error(`❌ ${symbol} için yeterli veri yok`);
-                    return null;
-                }
+                if (!klines || klines.length < 15) return null;
                 
-                // Close fiyatlarını çıkar
-                const closes = klines.map(kline => parseFloat(kline[4])); // Close price
-                
-                // RSI hesapla
+                const closes = klines.map(kline => parseFloat(kline[4]));
                 const rsi = calculateRSI(closes, 14);
                 
                 if (rsi !== null) {
-                    // Cache'e kaydet
-                    rsiCache.set(cacheKey, {
-                        value: rsi,
-                        timestamp: now
-                    });
-                    
-                    console.log(`✅ ${symbol} RSI: ${rsi.toFixed(1)}`);
+                    rsiCache.set(symbol, {value: rsi, timestamp: now});
                     return rsi;
                 }
-                
             } catch (error) {
-                console.error(`❌ ${symbol} RSI hesaplama hatası:`, error);
+                console.error(`RSI error for ${symbol}:`, error);
             }
             
             return null;
         };
         
-        // RSI değerini güncelle
+        // Update RSI display
         const updateRSI = async (symbol) => {
             const rsi = await getRSI(symbol);
             const rsiElement = $(`rsi${symbol}`);
@@ -175,13 +155,12 @@
                     rsiElement.textContent = rsi.toFixed(1);
                     rsiElement.style.fontWeight = 'bold';
                     
-                    // RSI değerine göre renk (opsiyonel - sadece subtle)
                     if (rsi > 70) {
-                        rsiElement.style.color = '#ff6b6b'; // Hafif kırmızı
+                        rsiElement.style.color = '#ff6b6b';
                     } else if (rsi < 30) {
-                        rsiElement.style.color = '#51cf66'; // Hafif yeşil
+                        rsiElement.style.color = '#51cf66';
                     } else {
-                        rsiElement.style.color = '#ffffff'; // Beyaz
+                        rsiElement.style.color = '#ffffff';
                     }
                 } else {
                     rsiElement.textContent = 'Err';
@@ -189,6 +168,9 @@
                 }
             }
         };
+        
+        // API functions
+        const gf = async s => {
             try {
                 const r = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${s}`);
                 return (await r.json()).lastFundingRate;
@@ -197,13 +179,12 @@
             }
         };
         
+        // Storage functions
         const sv = () => {
             try {
                 localStorage.setItem('c', JSON.stringify(Object.keys(c)));
-                console.log('Veriler localStorage\'a kaydedildi');
             } catch (error) {
-                console.error('localStorage kaydetme hatası:', error);
-                alert('Veriler kaydedilemedi. Tarayıcı depolama alanı dolu olabilir.');
+                console.error('Save error:', error);
             }
         };
         
@@ -211,23 +192,16 @@
             try {
                 const d = localStorage.getItem('c');
                 if (d) {
-                    const coins = JSON.parse(d);
-                    coins.forEach(s => c[s] = {w: null, l: 0});
-                    console.log(`${coins.length} coin localStorage\'dan yüklendi`);
-                    return coins.length > 0;
+                    JSON.parse(d).forEach(s => c[s] = {w: null, l: 0});
+                    return Object.keys(c).length > 0;
                 }
             } catch (error) {
-                console.error('localStorage okuma hatası:', error);
-                // localStorage bozuksa temizle
-                try {
-                    localStorage.removeItem('c');
-                } catch (e) {
-                    console.error('localStorage temizleme hatası:', e);
-                }
+                console.error('Load error:', error);
             }
             return false;
         };
         
+        // UI functions
         const st = (s, m, t) => {
             const e = $(`s${s}`);
             if (e) {
@@ -248,11 +222,7 @@
                 Object.keys(c).forEach(s => {
                     if (!$(`r${s}`)) {
                         tb.innerHTML += `<tr id="r${s}">
-                            <td>
-                                <div class="coin-name" onclick="loadChart('${s}')" style="cursor:pointer;text-decoration:underline;color:#ffd700;" title="Grafiği görmek için tıklayın">
-                                    ${s}
-                                </div>
-                            </td>
+                            <td><div class="coin-name" onclick="loadChart('${s}')" style="cursor:pointer;text-decoration:underline;color:#ffd700;" title="Grafiği görmek için tıklayın">${s}</div></td>
                             <td><span class="status connecting" id="s${s}">Bağlanıyor...</span></td>
                             <td class="numeric-cell"><div id="p${s}">$0.00</div></td>
                             <td class="numeric-cell" id="h${s}">-</td>
@@ -268,58 +238,32 @@
             }
         };
         
+        // WebSocket connection
         const cn = s => {
             try {
                 const w = new WebSocket(`wss://fstream.binance.com/ws/${s.toLowerCase()}@ticker`);
                 c[s].w = w;
                 
-                // Funding rate al (hata yakalama ile)
+                // Get funding rate
                 gf(s).then(r => {
                     const e = $(`f${s}`);
                     if (e) {
                         e.textContent = ff(r);
                         e.className = `numeric-cell ${(+r || 0) >= 0 ? 'change-positive' : 'change-negative'}`;
                     }
-                }).catch(err => {
-                    console.error(`Funding rate hatası (${s}):`, err);
-                    const e = $(`f${s}`);
-                    if (e) e.textContent = 'Hata';
                 });
                 
-                // RSI hesapla ve güncelle
+                // Get RSI
                 updateRSI(s);
                 
-                // 5 dakikada bir RSI güncelle
+                // RSI update interval (5 minutes)
                 setInterval(() => {
-                    if (c[s]) { // Coin hala listede mi?
-                        updateRSI(s);
-                    }
-                }, 300000); // 5 dakika
+                    if (c[s]) updateRSI(s);
+                }, 300000);
                 
-                w.onopen = () => {
-                    console.log(`WebSocket açıldı: ${s}`);
-                    st(s, 'Bağlı', 'connected');
-                };
-                
-                w.onerror = (error) => {
-                    console.error(`WebSocket hatası (${s}):`, error);
-                    st(s, 'Hata', 'disconnected');
-                };
-                
-                w.onclose = (event) => {
-                    console.log(`WebSocket kapandı (${s}):`, event.code, event.reason);
-                    st(s, 'Kesildi', 'disconnected');
-                    
-                    // 5 saniye sonra yeniden bağlanmayı dene
-                    if (c[s] && event.code !== 1000) { // 1000 = normal closure
-                        setTimeout(() => {
-                            if (c[s]) { // Coin hala listede mi?
-                                console.log(`Yeniden bağlanıyor: ${s}`);
-                                cn(s);
-                            }
-                        }, 5000);
-                    }
-                };
+                w.onopen = () => st(s, 'Bağlı', 'connected');
+                w.onerror = () => st(s, 'Hata', 'disconnected');
+                w.onclose = () => st(s, 'Kesildi', 'disconnected');
                 
                 w.onmessage = e => {
                     try {
@@ -342,132 +286,67 @@
                         
                         c[s].l = +d.c;
                     } catch (err) {
-                        console.error(`Veri parse hatası (${s}):`, err);
+                        console.error('Parse error:', err);
                     }
                 };
                 
             } catch (error) {
-                console.error(`WebSocket oluşturma hatası (${s}):`, error);
-                st(s, 'Hata', 'disconnected');
+                console.error('WebSocket error:', error);
             }
         };
         
+        // Chart loading
         function loadChart(s) {
-            console.log(`📈 Grafik yükleniyor: ${s}`);
-            const w = document.getElementById('tradingview-widget');
+            const w = $('tradingview-widget');
+            if (!w) return;
             
-            if (!w) {
-                console.error('❌ TradingView widget container bulunamadı!');
-                return;
-            }
-            
-            // Loading mesajı göster
-            w.innerHTML = `<div style="text-align:center;padding:50px 0;opacity:0.7;font-size:16px;">📈 ${s} grafiği yükleniyor...</div>`;
-            
-            // Eski script'leri temizle
-            const oldScripts = document.querySelectorAll('script[src*="tradingview"]');
-            oldScripts.forEach(script => script.remove());
+            w.innerHTML = `<div style="text-align:center;padding:50px 0;opacity:0.7;">📈 ${s} grafiği yükleniyor...</div>`;
             
             setTimeout(() => {
-                try {
-                    // Yeni widget HTML'i
-                    const widgetHTML = `
-                        <div class="tradingview-widget-container" style="height:100%;width:100%;">
-                            <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%;"></div>
-                            <div class="tradingview-widget-copyright">
-                                <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-                                    <span class="blue-text">Track all markets on TradingView</span>
-                                </a>
-                            </div>
-                        </div>
-                    `;
-                    
-                    w.innerHTML = widgetHTML;
-                    
-                    // Script elementi oluştur
-                    const script = document.createElement('script');
-                    script.type = 'text/javascript';
-                    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-                    script.async = true;
-                    
-                    // Widget konfigürasyonu (uyarıları azaltmak için)
-                    const config = {
-                        "autosize": true,
-                        "symbol": `BINANCE:${s}`,
-                        "interval": "15",
-                        "timezone": "Etc/UTC",
-                        "theme": "dark",
-                        "style": "1",
-                        "locale": "tr",
-                        "enable_publishing": false,
-                        "withdateranges": true,
-                        "range": "1D",
-                        "hide_side_toolbar": false,
-                        "allow_symbol_change": false,
-                        "save_image": false,
-                        "calendar": false,
-                        "support_host": "https://www.tradingview.com",
-                        "debug": false,
-                        "log_level": "error"
-                    };
-                    
-                    script.innerHTML = JSON.stringify(config);
-                    
-                    // Script'i widget container'a ekle
-                    const widgetContainer = w.querySelector('.tradingview-widget-container__widget');
-                    if (widgetContainer) {
-                        widgetContainer.appendChild(script);
-                        console.log(`✅ ${s} grafiği başarıyla yüklendi`);
-                    } else {
-                        console.error('❌ Widget container bulunamadı');
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ TradingView widget yükleme hatası:', error);
-                    w.innerHTML = `<div style="text-align:center;padding:50px 0;opacity:0.7;color:#ff4757;">
-                        ❌ Grafik yüklenirken hata oluştu<br>
-                        <small>${s}</small>
-                    </div>`;
-                }
+                const script = document.createElement('script');
+                script.type = 'text/javascript';
+                script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+                script.async = true;
+                script.innerHTML = JSON.stringify({
+                    "autosize": true,
+                    "symbol": `BINANCE:${s}`,
+                    "interval": "15",
+                    "timezone": "Etc/UTC",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "tr",
+                    "enable_publishing": false,
+                    "withdateranges": true,
+                    "range": "1D",
+                    "hide_side_toolbar": false,
+                    "allow_symbol_change": false,
+                    "save_image": false,
+                    "calendar": false,
+                    "support_host": "https://www.tradingview.com"
+                });
+                
+                w.innerHTML = `<div class="tradingview-widget-container" style="height:100%;width:100%;"><div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%;"></div></div>`;
+                w.querySelector('.tradingview-widget-container__widget').appendChild(script);
             }, 300);
         }
         
-        // Global fonksiyon olarak tanımla
-        window.loadChart = loadChart;
-        
-        // Debug için test fonksiyonu
-        window.testChart = function(symbol) {
-            console.log('🧪 Test chart loading:', symbol || 'BTCUSDT');
-            loadChart(symbol || 'BTCUSDT');
-        };
-        
+        // Main functions
         function addCoin() {
             const inp = $('inp');
-            if (!inp) {
-                alert('Input kutusu bulunamadı!');
-                return;
-            }
+            if (!inp) return;
+            
             let symbol = inp.value.trim().toUpperCase();
-            console.log('Girilen coin:', symbol);
             if (!symbol) return alert('Lütfen bir coin adı girin!');
             if (!symbol.endsWith('USDT')) symbol += 'USDT';
-            console.log('Son coin adı:', symbol);
             if (c[symbol]) return alert(`${symbol} zaten takip ediliyor!`);
             if (Object.keys(c).length >= 20) return alert('Maksimum 20 coin takip edebilirsiniz!');
             
-            try {
-                c[symbol] = {w: null, l: 0};
-                console.log('Coin objesi oluşturuldu:', c[symbol]);
-                up();
-                cn(symbol);
-                sv();
-                inp.value = '';
-                if (Object.keys(c).length === 1) loadChart(symbol);
-                console.log('Coin başarıyla eklendi!');
-            } catch (error) {
-                console.error('Coin ekleme hatası:', error);
-                alert('Coin eklenirken hata oluştu!');
-            }
+            c[symbol] = {w: null, l: 0};
+            up();
+            cn(symbol);
+            sv();
+            inp.value = '';
+            if (Object.keys(c).length === 1) loadChart(symbol);
         }
         
         function removeCoin(s) {
@@ -517,121 +396,45 @@
             rs.forEach(row => tb.appendChild(row));
         }
         
-        // KESIN ÇÖZÜM: Input Focus ve Event Management
-        let inputInitialized = false;
-        
-        function forceInitializeInput() {
-            const inp = document.getElementById('inp');
+        // Input initialization
+        function initInput() {
+            const inp = $('inp');
+            if (!inp || inputInitialized) return;
             
-            if (!inp) {
-                console.error('❌ Input elementi DOM\'da yok!');
-                return false;
-            }
+            inp.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCoin();
+                }
+            });
             
-            if (inputInitialized) {
-                console.log('✅ Input zaten initialize edildi');
-                return true;
-            }
-            
-            try {
-                // Test input erişimi
-                inp.value = '';
-                inp.disabled = false;
-                inp.readOnly = false;
-                
-                // Style kontrolü 
-                inp.style.pointerEvents = 'auto';
-                inp.style.display = 'block';
-                inp.style.visibility = 'visible';
-                
-                // Event listeners ekle
-                inp.addEventListener('keydown', function(e) {
-                    console.log('🔽 Keydown:', e.key);
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        addCoin();
-                    }
-                }, true);
-                
-                inp.addEventListener('keypress', function(e) {
-                    console.log('⌨️ Keypress:', e.key);
-                }, true);
-                
-                inp.addEventListener('input', function(e) {
-                    console.log('📝 Input change:', e.target.value);
-                }, true);
-                
-                inp.addEventListener('focus', function() {
-                    console.log('🎯 Input focused');
-                }, true);
-                
-                inp.addEventListener('blur', function() {
-                    console.log('👀 Input blurred');
-                }, true);
-                
-                // Focus ver
-                setTimeout(() => {
-                    inp.focus();
-                    inp.click();
-                    console.log('✅ Input focus verildi');
-                }, 100);
-                
-                inputInitialized = true;
-                console.log('✅ Input başarıyla initialize edildi');
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Input initialize hatası:', error);
-                return false;
-            }
+            inp.focus();
+            inputInitialized = true;
         }
         
-        // Multiple initialization strategies
-        function initializeApp() {
-            console.log('🚀 App initialization başladı');
-            
-            // Input initialize et
-            if (!forceInitializeInput()) {
-                console.log('⏳ Input bulunamadı, 500ms sonra tekrar denenecek');
-                setTimeout(() => {
-                    if (!forceInitializeInput()) {
-                        console.log('⏳ 2. deneme, 1000ms sonra tekrar denenecek');
-                        setTimeout(() => {
-                            forceInitializeInput();
-                        }, 1000);
-                    }
-                }, 500);
-            }
-            
-            // Saved coins yükle
+        // Initialize app
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                initInput();
+                if (ld()) {
+                    up();
+                    Object.keys(c).forEach(cn);
+                }
+            });
+        } else {
+            initInput();
             if (ld()) {
                 up();
                 Object.keys(c).forEach(cn);
             }
         }
         
-        // Multiple DOM ready strategies
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
-        
-        // Fallback
-        window.addEventListener('load', function() {
-            if (!inputInitialized) {
-                console.log('🔄 Window load fallback');
-                initializeApp();
-            }
-        });
-        
-        // Manual trigger for debugging
-        window.debugInput = forceInitializeInput;
-        
         window.onbeforeunload = () => {
             Object.values(c).forEach(coin => coin.w?.close());
         };
+        
+        // Global functions
+        window.loadChart = loadChart;
     </script>
 </body>
 </html>
