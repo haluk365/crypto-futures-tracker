@@ -95,35 +95,44 @@
             margin-left: 10px;
         }
 
-        .coins-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .coin-card {
+        .coins-table-container {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease;
+            overflow-x: auto;
         }
 
-        .coin-card:hover {
-            transform: translateY(-5px);
+        .coins-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
         }
 
-        .coin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
+        .coins-table th {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-weight: bold;
+            color: #ffd700;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
+        }
+
+        .coins-table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            vertical-align: middle;
+        }
+
+        .coins-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .coin-name {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #ffd700;
         }
@@ -131,8 +140,11 @@
         .status {
             padding: 4px 8px;
             border-radius: 6px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
+            text-align: center;
+            min-width: 60px;
+            display: inline-block;
         }
 
         .status.connected {
@@ -151,9 +163,8 @@
         }
 
         .price {
-            font-size: 2rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            margin-bottom: 0.5rem;
             font-family: 'Courier New', monospace;
         }
 
@@ -167,37 +178,36 @@
             animation: pulse-red 0.5s ease-in-out;
         }
 
-        .price-change {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-        }
-
         .change-positive {
             color: #00ff88;
+            font-weight: bold;
         }
 
         .change-negative {
             color: #ff4757;
-        }
-
-        .coin-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .stat-label {
-            opacity: 0.8;
-        }
-
-        .stat-value {
             font-weight: bold;
+        }
+
+        .remove-btn {
+            background: linear-gradient(45deg, #ff4757, #c44569);
+            padding: 6px 12px;
+            font-size: 11px;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+        }
+
+        .numeric-cell {
+            text-align: right;
+            font-family: 'Courier New', monospace;
         }
 
         @keyframes pulse-green {
@@ -249,7 +259,7 @@
             </div>
         </div>
 
-        <div class="coins-grid" id="coinsGrid">
+        <div class="coins-table-container" id="coinsContainer">
             <div class="no-coins">
                 Takip etmek istediğiniz coinleri yukarıdan ekleyin
             </div>
@@ -262,7 +272,7 @@
 
         const coinInput = document.getElementById('coinInput');
         const addBtn = document.getElementById('addBtn');
-        const coinsGrid = document.getElementById('coinsGrid');
+        const coinsContainer = document.getElementById('coinsContainer');
 
         // Binance Futures'da mevcut olan coinleri al
         async function loadFuturesSymbols() {
@@ -305,42 +315,56 @@
             }
         }
 
-        function createCoinCard(symbol) {
-            const card = document.createElement('div');
-            card.className = 'coin-card';
-            card.id = `card-${symbol}`;
+        function createCoinsTable() {
+            const table = document.createElement('table');
+            table.className = 'coins-table';
             
-            card.innerHTML = `
-                <div class="coin-header">
-                    <div class="coin-name">${symbol}</div>
-                    <div>
-                        <span class="status connecting" id="status-${symbol}">Bağlanıyor...</span>
-                        <button class="remove-btn" onclick="removeCoin('${symbol}')">Kaldır</button>
-                    </div>
-                </div>
-                <div class="price" id="price-${symbol}">$0.00</div>
-                <div class="price-change" id="change-${symbol}">-</div>
-                <div class="coin-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">24s Yüksek:</span>
-                        <span class="stat-value" id="high-${symbol}">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">24s Düşük:</span>
-                        <span class="stat-value" id="low-${symbol}">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Hacim:</span>
-                        <span class="stat-value" id="volume-${symbol}">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Güncelleme:</span>
-                        <span class="stat-value" id="update-${symbol}">-</span>
-                    </div>
-                </div>
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Coin</th>
+                        <th>Durum</th>
+                        <th>Fiyat</th>
+                        <th>24s Değişim</th>
+                        <th>24s Yüksek</th>
+                        <th>24s Düşük</th>
+                        <th>Hacim</th>
+                        <th>Son Güncelleme</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="coinsTableBody">
+                </tbody>
             `;
             
-            return card;
+            return table;
+        }
+
+        function createCoinRow(symbol) {
+            const row = document.createElement('tr');
+            row.id = `row-${symbol}`;
+            
+            row.innerHTML = `
+                <td>
+                    <div class="coin-name">${symbol}</div>
+                </td>
+                <td>
+                    <span class="status connecting" id="status-${symbol}">Bağlanıyor...</span>
+                </td>
+                <td class="numeric-cell">
+                    <div class="price" id="price-${symbol}">$0.00</div>
+                </td>
+                <td class="numeric-cell" id="change-${symbol}">-</td>
+                <td class="numeric-cell" id="high-${symbol}">-</td>
+                <td class="numeric-cell" id="low-${symbol}">-</td>
+                <td class="numeric-cell" id="volume-${symbol}">-</td>
+                <td class="numeric-cell" id="update-${symbol}">-</td>
+                <td>
+                    <button class="remove-btn" onclick="removeCoin('${symbol}')">Kaldır</button>
+                </td>
+            `;
+            
+            return row;
         }
 
         function updateCoinStatus(symbol, message, type) {
@@ -404,7 +428,7 @@
             if (changeElement) {
                 const changeText = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}% (${changeAmount >= 0 ? '+' : ''}${formatPrice(changeAmount)})`;
                 changeElement.textContent = changeText;
-                changeElement.className = change24h >= 0 ? 'change-positive' : 'change-negative';
+                changeElement.className = `numeric-cell ${change24h >= 0 ? 'change-positive' : 'change-negative'}`;
             }
 
             // İstatistikler
@@ -481,35 +505,40 @@
         }
 
         function updateUI() {
-            const noCoinsDiv = coinsGrid.querySelector('.no-coins');
+            const noCoinsDiv = coinsContainer.querySelector('.no-coins');
             
             if (Object.keys(trackedCoins).length === 0) {
                 // Hiç coin yoksa "no-coins" mesajını göster
                 if (!noCoinsDiv) {
-                    coinsGrid.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
+                    coinsContainer.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
                 }
             } else {
-                // Coinler varsa kartları oluştur
+                // Coinler varsa tabloyu oluştur
                 if (noCoinsDiv) {
-                    coinsGrid.innerHTML = '';
+                    coinsContainer.innerHTML = '';
+                    const table = createCoinsTable();
+                    coinsContainer.appendChild(table);
                 }
                 
-                // Mevcut kartları kontrol et ve eksikleri ekle
-                Object.keys(trackedCoins).forEach(symbol => {
-                    if (!document.getElementById(`card-${symbol}`)) {
-                        const card = createCoinCard(symbol);
-                        coinsGrid.appendChild(card);
-                    }
-                });
-                
-                // Silinmiş kartları kaldır
-                const existingCards = coinsGrid.querySelectorAll('.coin-card');
-                existingCards.forEach(card => {
-                    const symbol = card.id.replace('card-', '');
-                    if (!trackedCoins[symbol]) {
-                        card.remove();
-                    }
-                });
+                const tableBody = document.getElementById('coinsTableBody');
+                if (tableBody) {
+                    // Mevcut satırları kontrol et ve eksikleri ekle
+                    Object.keys(trackedCoins).forEach(symbol => {
+                        if (!document.getElementById(`row-${symbol}`)) {
+                            const row = createCoinRow(symbol);
+                            tableBody.appendChild(row);
+                        }
+                    });
+                    
+                    // Silinmiş satırları kaldır
+                    const existingRows = tableBody.querySelectorAll('tr');
+                    existingRows.forEach(row => {
+                        const symbol = row.id.replace('row-', '');
+                        if (!trackedCoins[symbol]) {
+                            row.remove();
+                        }
+                    });
+                }
             }
         }
 
