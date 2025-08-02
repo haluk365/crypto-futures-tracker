@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kripto Para Fiyat Takibi</title>
+    <title>Futures Kripto Para Takibi</title>
     <style>
         * {
             margin: 0;
@@ -475,6 +475,17 @@
             }
         }
 
+        function formatNumber(num) {
+            if (num >= 1e9) {
+                return (num / 1e9).toFixed(2) + 'B';
+            } else if (num >= 1e6) {
+                return (num / 1e6).toFixed(2) + 'M';
+            } else if (num >= 1e3) {
+                return (num / 1e3).toFixed(2) + 'K';
+            }
+            return num.toFixed(2);
+        }
+
         function formatPrice(price) {
             if (price >= 1) {
                 return price.toFixed(2);
@@ -485,15 +496,24 @@
             }
         }
 
-        function formatNumber(num) {
-            if (num >= 1e9) {
-                return (num / 1e9).toFixed(2) + 'B';
-            } else if (num >= 1e6) {
-                return (num / 1e6).toFixed(2) + 'M';
-            } else if (num >= 1e3) {
-                return (num / 1e3).toFixed(2) + 'K';
-            }
-            return num.toFixed(2);
+        function formatFundingRate(rate) {
+            const percentage = (rate * 100).toFixed(4);
+            return `${percentage}%`;
+        }
+
+        function formatNextFundingTime(timestamp) {
+            if (!timestamp) return '-';
+            
+            const now = Date.now();
+            const fundingTime = new Date(timestamp);
+            const diff = timestamp - now;
+            
+            if (diff <= 0) return 'Şimdi';
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            return `${hours}s ${minutes}d`;
         }
 
         function sortData(column) {
@@ -510,60 +530,96 @@
             applySorting();
         }
 
-        function applySorting() {
-            filteredData.sort((a, b) => {
-                let aVal = a[currentSort.column];
-                let bVal = b[currentSort.column];
+        function updateTable() {
+            try {
+                const searchTerm = document.getElementById('searchBox').value.toUpperCase();
                 
-                if (currentSort.column === 'symbol') {
-                    aVal = aVal.replace('USDT', '');
-                    bVal = bVal.replace('USDT', '');
-                }
-                
-                if (typeof aVal === 'string') {
-                    return currentSort.direction === 'asc' ? 
-                        aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                }
-                
-                return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
-            });
+                // Filtreleme - sadece gerekli coinleri al
+                filteredData = Object.values(cryptoData).filter(coin => 
+                    coin.symbol && coin.symbol.includes(searchTerm) && coin.price > 0
+                ).slice(0, 100); // Maksimum 100 coin göster
 
-            renderTable();
+                // Mevcut sıralamayı uygula
+                applySorting();
+            } catch (error) {
+                console.error('Update table error:', error);
+            }
         }
 
-        function updateTable() {
-            const searchTerm = document.getElementById('searchBox').value.toUpperCase();
-            
-            // Filtreleme
-            filteredData = Object.values(cryptoData).filter(coin => 
-                coin.symbol.includes(searchTerm)
-            );
+        function applySorting() {
+            try {
+                if (filteredData.length === 0) return;
 
-            // Mevcut sıralamayı uygula
-            applySorting();
+                filteredData.sort((a, b) => {
+                    let aVal = a[currentSort.column] || 0;
+                    let bVal = b[currentSort.column] || 0;
+                    
+                    if (currentSort.column === 'symbol') {
+                        aVal = (aVal || '').replace('USDT', '');
+                        bVal = (bVal || '').replace('USDT', '');
+                        return currentSort.direction === 'asc' ? 
+                            aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    }
+                    
+                    return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+                });
+
+                renderTable();
+            } catch (error) {
+                console.error('Sorting error:', error);
+            }
         }
 
         function renderTable() {
-            const tableBody = document.getElementById('cryptoTable');
-            
-            if (filteredData.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="loading">Futures veri yükleniyor veya coin bulunamadı</td></tr>';
-                return;
-            }
+            try {
+                const tableBody = document.getElementById('cryptoTable');
+                
+                if (!tableBody) return;
+                
+                if (filteredData.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="loading">Futures veri yükleniyor veya coin bulunamadı</td></tr>';
+                    return;
+                }
 
-            tableBody.innerHTML = filteredData.map(coin => `
-                <tr>
-                    <td class="symbol">${coin.symbol.replace('USDT', '')}</td>
-                    <td class="price">${formatPrice(coin.price)}</td>
-                    <td class="${coin.changeAmount >= 0 ? 'change-positive' : 'change-negative'}">
-                        ${coin.changeAmount >= 0 ? '+' : ''}${coin.changeAmount.toFixed(4)}
-                    </td>
-                    <td class="${coin.change >= 0 ? 'change-positive' : 'change-negative'}">
-                        ${coin.change >= 0 ? '+' : ''}${coin.change.toFixed(2)}%
-                    </td>
-                    <td class="volume">${formatNumber(coin.quoteVolume)}</td>
-                </tr>
-            `).join('');
+                // Güvenli render - sadece ilk 50 satırı göster
+                const limitedData = filteredData.slice(0, 50);
+                
+                const rows = limitedData.map(coin => {
+                    const symbol = (coin.symbol || '').replace('USDT', '');
+                    const price = coin.price || 0;
+                    const changeAmount = coin.changeAmount || 0;
+                    const change = coin.change || 0;
+                    const fundingRate = coin.fundingRate || 0;
+                    const nextFundingTime = coin.nextFundingTime || 0;
+                    const quoteVolume = coin.quoteVolume || 0;
+
+                    return `
+                        <tr>
+                            <td class="symbol">${symbol}</td>
+                            <td class="price">$${formatPrice(price)}</td>
+                            <td class="${changeAmount >= 0 ? 'change-positive' : 'change-negative'}">
+                                ${changeAmount >= 0 ? '+' : ''}$${changeAmount.toFixed(4)}
+                            </td>
+                            <td class="${change >= 0 ? 'change-positive' : 'change-negative'}">
+                                ${change >= 0 ? '+' : ''}${change.toFixed(2)}%
+                            </td>
+                            <td class="${fundingRate >= 0 ? 'change-positive' : 'change-negative'}">
+                                ${formatFundingRate(fundingRate)}
+                            </td>
+                            <td class="funding-time">${formatNextFundingTime(nextFundingTime)}</td>
+                            <td class="volume">$${formatNumber(quoteVolume)}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tableBody.innerHTML = rows;
+            } catch (error) {
+                console.error('Render table error:', error);
+                const tableBody = document.getElementById('cryptoTable');
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="loading">Render hatası oluştu</td></tr>';
+                }
+            }
         }
 
         // Arama fonksiyonu - throttled
