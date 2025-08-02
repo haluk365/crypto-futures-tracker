@@ -44,7 +44,7 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Binance Futures Takipçi</h1>
-            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.4</div>
+            <div style="margin-bottom: 1rem; opacity: 0.7; font-size: 12px;">Versiyon 1.5</div>
             <div class="add-coin">
                 <input type="text" id="inp" placeholder="Coin adı (örn: BTC)">
                 <button onclick="addCoin()">Ekle</button>
@@ -267,11 +267,26 @@
         }
         
         window.onload = () => {
-            const inp = $('inp');
-            if (inp) {
-                inp.focus();
-                inp.onkeypress = e => e.key === 'Enter' && addCoin();
-            }
+            // Input elementinin varlığını kontrol et ve event listener ekle
+            setTimeout(() => {
+                const inp = document.getElementById('inp');
+                console.log('Input elementi:', inp); // Debug için
+                if (inp) {
+                    inp.focus();
+                    inp.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            addCoin();
+                        }
+                    });
+                    // Test için input'a yazabilir miyiz kontrol et
+                    inp.addEventListener('input', function() {
+                        console.log('Input değeri:', inp.value);
+                    });
+                } else {
+                    console.error('Input elementi bulunamadı!');
+                }
+            }, 100);
+            
             if (ld()) {
                 up();
                 Object.keys(c).forEach(cn);
