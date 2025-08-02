@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binance Futures Fiyat Takipçisi</title>
+    <title>Binance Futures Çoklu Takipçi</title>
     <style>
         * {
             margin: 0;
@@ -15,41 +15,40 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 2rem;
             color: white;
         }
 
         .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 2rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 500px;
-            width: 90%;
+            margin-bottom: 2rem;
             text-align: center;
         }
 
         h1 {
             margin-bottom: 1.5rem;
-            font-size: 2rem;
+            font-size: 2.5rem;
             background: linear-gradient(45deg, #ffd700, #ffed4e);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .controls {
-            margin-bottom: 2rem;
-        }
-
-        .input-group {
+        .add-coin {
             display: flex;
             gap: 10px;
-            margin-bottom: 1rem;
+            max-width: 400px;
+            margin: 0 auto;
         }
 
         input {
@@ -89,84 +88,51 @@
             box-shadow: 0 4px 12px rgba(238, 90, 36, 0.4);
         }
 
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        .remove-btn {
+            background: linear-gradient(45deg, #ff4757, #c44569);
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-left: 10px;
         }
 
-        .price-display {
-            background: rgba(0, 0, 0, 0.3);
+        .coins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .coin-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             border-radius: 15px;
-            padding: 2rem;
-            margin: 1rem 0;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .coin-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .coin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
         }
 
         .coin-name {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            font-weight: bold;
             color: #ffd700;
         }
 
-        .price {
-            font-size: 3rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            font-family: 'Courier New', monospace;
-        }
-
-        .price.up {
-            color: #00ff88;
-            animation: pulse-green 0.5s ease-in-out;
-        }
-
-        .price.down {
-            color: #ff4757;
-            animation: pulse-red 0.5s ease-in-out;
-        }
-
-        .price-change {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-        }
-
-        .change-positive {
-            color: #00ff88;
-        }
-
-        .change-negative {
-            color: #ff4757;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .stat-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 10px;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
         .status {
-            margin: 1rem 0;
-            padding: 0.5rem;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
         }
 
         .status.connected {
@@ -184,6 +150,56 @@
             color: #ffd700;
         }
 
+        .price {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .price.up {
+            color: #00ff88;
+            animation: pulse-green 0.5s ease-in-out;
+        }
+
+        .price.down {
+            color: #ff4757;
+            animation: pulse-red 0.5s ease-in-out;
+        }
+
+        .price-change {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .change-positive {
+            color: #00ff88;
+        }
+
+        .change-negative {
+            color: #ff4757;
+        }
+
+        .coin-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-label {
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-weight: bold;
+        }
+
         @keyframes pulse-green {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); color: #00ff88; }
@@ -196,69 +212,57 @@
             100% { transform: scale(1); }
         }
 
+        .no-coins {
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.7;
+            font-size: 1.2rem;
+        }
 
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .coins-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .add-coin {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Binance Futures Takipçisi</h1>
-        
-        <div class="controls">
-            <div class="input-group">
-                <input type="text" id="coinInput" placeholder="Coin adı (örn: BTC)" value="BTC">
-                <button id="connectBtn">Bağlan</button>
-            </div>
+        <div class="header">
+            <h1>🚀 Binance Futures Çoklu Takipçi</h1>
             
-
+            <div class="add-coin">
+                <input type="text" id="coinInput" placeholder="Coin adı (örn: BTC)" value="">
+                <button id="addBtn">Ekle</button>
+            </div>
         </div>
 
-        <div class="status" id="status">Bağlantı bekleniyor...</div>
-
-        <div class="price-display" id="priceDisplay" style="display: none;">
-            <div class="coin-name" id="coinName">-</div>
-            <div class="price" id="price">$0.00</div>
-            <div class="price-change" id="priceChange">-</div>
-            
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-label">24s Yüksek</div>
-                    <div class="stat-value" id="high24h">-</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">24s Düşük</div>
-                    <div class="stat-value" id="low24h">-</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">24s Hacim</div>
-                    <div class="stat-value" id="volume24h">-</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Son Güncelleme</div>
-                    <div class="stat-value" id="lastUpdate">-</div>
-                </div>
+        <div class="coins-grid" id="coinsGrid">
+            <div class="no-coins">
+                Takip etmek istediğiniz coinleri yukarıdan ekleyin
             </div>
         </div>
     </div>
 
     <script>
-        let ws = null;
-        let currentSymbol = '';
-        let lastPrice = 0;
         let futuresSymbols = [];
+        let trackedCoins = {};
 
         const coinInput = document.getElementById('coinInput');
-        const connectBtn = document.getElementById('connectBtn');
-        const status = document.getElementById('status');
-        const priceDisplay = document.getElementById('priceDisplay');
-        const coinName = document.getElementById('coinName');
-        const price = document.getElementById('price');
-        const priceChange = document.getElementById('priceChange');
-        const high24h = document.getElementById('high24h');
-        const low24h = document.getElementById('low24h');
-        const volume24h = document.getElementById('volume24h');
-        const lastUpdate = document.getElementById('lastUpdate');
-
-
+        const addBtn = document.getElementById('addBtn');
+        const coinsGrid = document.getElementById('coinsGrid');
 
         // Binance Futures'da mevcut olan coinleri al
         async function loadFuturesSymbols() {
@@ -271,13 +275,12 @@
                 console.log(`${futuresSymbols.length} adet Futures coin yüklendi`);
             } catch (error) {
                 console.error('Futures coin listesi alınamadı:', error);
-                updateStatus('Coin listesi yüklenirken hata oluştu', 'disconnected');
             }
         }
 
         function validateSymbol(symbol) {
             if (futuresSymbols.length === 0) {
-                return true; // Liste henüz yüklenmediyse geç
+                return true;
             }
             return futuresSymbols.includes(symbol);
         }
@@ -302,128 +305,239 @@
             }
         }
 
-        function updateStatus(message, type) {
-            status.textContent = message;
-            status.className = `status ${type}`;
+        function createCoinCard(symbol) {
+            const card = document.createElement('div');
+            card.className = 'coin-card';
+            card.id = `card-${symbol}`;
+            
+            card.innerHTML = `
+                <div class="coin-header">
+                    <div class="coin-name">${symbol}</div>
+                    <div>
+                        <span class="status connecting" id="status-${symbol}">Bağlanıyor...</span>
+                        <button class="remove-btn" onclick="removeCoin('${symbol}')">Kaldır</button>
+                    </div>
+                </div>
+                <div class="price" id="price-${symbol}">$0.00</div>
+                <div class="price-change" id="change-${symbol}">-</div>
+                <div class="coin-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">24s Yüksek:</span>
+                        <span class="stat-value" id="high-${symbol}">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">24s Düşük:</span>
+                        <span class="stat-value" id="low-${symbol}">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Hacim:</span>
+                        <span class="stat-value" id="volume-${symbol}">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Güncelleme:</span>
+                        <span class="stat-value" id="update-${symbol}">-</span>
+                    </div>
+                </div>
+            `;
+            
+            return card;
         }
 
-        function connectWebSocket() {
-            let symbol = coinInput.value.trim().toUpperCase();
-            
-            if (!symbol) {
-                updateStatus('Lütfen bir coin adı girin!', 'disconnected');
-                return;
+        function updateCoinStatus(symbol, message, type) {
+            const statusElement = document.getElementById(`status-${symbol}`);
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.className = `status ${type}`;
             }
+        }
 
-            // Otomatik olarak USDT ekle (eğer zaten yoksa)
-            if (!symbol.endsWith('USDT')) {
-                symbol = symbol + 'USDT';
-            }
-
-            // Coin'in Futures'da mevcut olup olmadığını kontrol et
-            if (!validateSymbol(symbol)) {
-                updateStatus(`${symbol} Binance Futures'da bulunamadı!`, 'disconnected');
-                return;
-            }
-
-            if (ws) {
-                ws.close();
-            }
-
-            currentSymbol = symbol;
-            updateStatus('Bağlanıyor...', 'connecting');
-            connectBtn.disabled = true;
-            connectBtn.textContent = 'Bağlanıyor...';
-
-            // Binance Futures WebSocket URL
+        function connectCoinWebSocket(symbol) {
             const wsUrl = `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@ticker`;
-            
-            ws = new WebSocket(wsUrl);
+            const ws = new WebSocket(wsUrl);
+
+            trackedCoins[symbol].ws = ws;
+            trackedCoins[symbol].lastPrice = 0;
 
             ws.onopen = function() {
-                updateStatus(`${symbol} için bağlantı kuruldu!`, 'connected');
-                connectBtn.disabled = false;
-                connectBtn.textContent = 'Yeniden Bağlan';
-                priceDisplay.style.display = 'block';
-                coinName.textContent = symbol;
+                updateCoinStatus(symbol, 'Bağlı', 'connected');
             };
 
             ws.onmessage = function(event) {
                 try {
                     const data = JSON.parse(event.data);
-                    
-                    const currentPrice = parseFloat(data.c);
-                    const change24h = parseFloat(data.P);
-                    const changeAmount = parseFloat(data.p);
-                    
-                    // Fiyat değişim animasyonu
-                    price.className = 'price';
-                    if (currentPrice > lastPrice) {
-                        price.classList.add('up');
-                    } else if (currentPrice < lastPrice) {
-                        price.classList.add('down');
-                    }
-                    
-                    // Fiyat bilgilerini güncelle
-                    price.textContent = formatPrice(data.c);
-                    
-                    // Değişim yüzdesini güncelle
-                    const changeText = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}% (${changeAmount >= 0 ? '+' : ''}${formatPrice(changeAmount)})`;
-                    priceChange.textContent = changeText;
-                    priceChange.className = change24h >= 0 ? 'change-positive' : 'change-negative';
-                    
-                    // İstatistikleri güncelle
-                    high24h.textContent = formatPrice(data.h);
-                    low24h.textContent = formatPrice(data.l);
-                    volume24h.textContent = formatNumber(data.v);
-                    
-                    // Son güncelleme zamanı
-                    const now = new Date();
-                    lastUpdate.textContent = now.toLocaleTimeString('tr-TR');
-                    
-                    lastPrice = currentPrice;
-                    
+                    updateCoinData(symbol, data);
                 } catch (error) {
-                    console.error('Veri işleme hatası:', error);
+                    console.error(`${symbol} veri işleme hatası:`, error);
                 }
             };
 
             ws.onerror = function(error) {
-                console.error('WebSocket hatası:', error);
-                updateStatus('Bağlantı hatası!', 'disconnected');
-                connectBtn.disabled = false;
-                connectBtn.textContent = 'Tekrar Dene';
+                console.error(`${symbol} WebSocket hatası:`, error);
+                updateCoinStatus(symbol, 'Hata', 'disconnected');
             };
 
             ws.onclose = function() {
-                updateStatus('Bağlantı kesildi', 'disconnected');
-                connectBtn.disabled = false;
-                connectBtn.textContent = 'Bağlan';
+                updateCoinStatus(symbol, 'Kesildi', 'disconnected');
             };
         }
 
+        function updateCoinData(symbol, data) {
+            const currentPrice = parseFloat(data.c);
+            const change24h = parseFloat(data.P);
+            const changeAmount = parseFloat(data.p);
+            const lastPrice = trackedCoins[symbol].lastPrice;
+
+            // Fiyat elementi
+            const priceElement = document.getElementById(`price-${symbol}`);
+            if (priceElement) {
+                priceElement.className = 'price';
+                if (currentPrice > lastPrice) {
+                    priceElement.classList.add('up');
+                } else if (currentPrice < lastPrice) {
+                    priceElement.classList.add('down');
+                }
+                priceElement.textContent = formatPrice(data.c);
+            }
+
+            // Değişim yüzdesi
+            const changeElement = document.getElementById(`change-${symbol}`);
+            if (changeElement) {
+                const changeText = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}% (${changeAmount >= 0 ? '+' : ''}${formatPrice(changeAmount)})`;
+                changeElement.textContent = changeText;
+                changeElement.className = change24h >= 0 ? 'change-positive' : 'change-negative';
+            }
+
+            // İstatistikler
+            const highElement = document.getElementById(`high-${symbol}`);
+            const lowElement = document.getElementById(`low-${symbol}`);
+            const volumeElement = document.getElementById(`volume-${symbol}`);
+            const updateElement = document.getElementById(`update-${symbol}`);
+
+            if (highElement) highElement.textContent = formatPrice(data.h);
+            if (lowElement) lowElement.textContent = formatPrice(data.l);
+            if (volumeElement) volumeElement.textContent = formatNumber(data.v);
+            if (updateElement) {
+                const now = new Date();
+                updateElement.textContent = now.toLocaleTimeString('tr-TR');
+            }
+
+            trackedCoins[symbol].lastPrice = currentPrice;
+        }
+
+        function addCoin() {
+            let symbol = coinInput.value.trim().toUpperCase();
+            
+            if (!symbol) {
+                alert('Lütfen bir coin adı girin!');
+                return;
+            }
+
+            // Otomatik olarak USDT ekle
+            if (!symbol.endsWith('USDT')) {
+                symbol = symbol + 'USDT';
+            }
+
+            // Zaten takip ediliyor mu kontrol et
+            if (trackedCoins[symbol]) {
+                alert(`${symbol} zaten takip ediliyor!`);
+                return;
+            }
+
+            // Futures'da mevcut mu kontrol et
+            if (!validateSymbol(symbol)) {
+                alert(`${symbol} Binance Futures'da bulunamadı!`);
+                return;
+            }
+
+            // Coin'i ekle
+            trackedCoins[symbol] = {
+                ws: null,
+                lastPrice: 0
+            };
+
+            // UI'yi güncelle
+            updateUI();
+
+            // WebSocket bağlantısını kur
+            connectCoinWebSocket(symbol);
+
+            // Input'u temizle
+            coinInput.value = '';
+        }
+
+        function removeCoin(symbol) {
+            if (trackedCoins[symbol]) {
+                // WebSocket bağlantısını kapat
+                if (trackedCoins[symbol].ws) {
+                    trackedCoins[symbol].ws.close();
+                }
+                
+                // Takip listesinden çıkar
+                delete trackedCoins[symbol];
+                
+                // UI'yi güncelle
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            const noCoinsDiv = coinsGrid.querySelector('.no-coins');
+            
+            if (Object.keys(trackedCoins).length === 0) {
+                // Hiç coin yoksa "no-coins" mesajını göster
+                if (!noCoinsDiv) {
+                    coinsGrid.innerHTML = '<div class="no-coins">Takip etmek istediğiniz coinleri yukarıdan ekleyin</div>';
+                }
+            } else {
+                // Coinler varsa kartları oluştur
+                if (noCoinsDiv) {
+                    coinsGrid.innerHTML = '';
+                }
+                
+                // Mevcut kartları kontrol et ve eksikleri ekle
+                Object.keys(trackedCoins).forEach(symbol => {
+                    if (!document.getElementById(`card-${symbol}`)) {
+                        const card = createCoinCard(symbol);
+                        coinsGrid.appendChild(card);
+                    }
+                });
+                
+                // Silinmiş kartları kaldır
+                const existingCards = coinsGrid.querySelectorAll('.coin-card');
+                existingCards.forEach(card => {
+                    const symbol = card.id.replace('card-', '');
+                    if (!trackedCoins[symbol]) {
+                        card.remove();
+                    }
+                });
+            }
+        }
+
         // Event listeners
-        connectBtn.addEventListener('click', connectWebSocket);
+        addBtn.addEventListener('click', addCoin);
         
         coinInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                connectWebSocket();
+                addCoin();
             }
         });
 
-        // Sayfa yüklendiğinde Futures coin listesini yükle ve otomatik bağlan
+        // Sayfa yüklendiğinde
         window.addEventListener('load', function() {
-            loadFuturesSymbols().then(() => {
-                setTimeout(connectWebSocket, 500);
+            loadFuturesSymbols();
+        });
+
+        // Sayfa kapanırken tüm WebSocket bağlantılarını kapat
+        window.addEventListener('beforeunload', function() {
+            Object.values(trackedCoins).forEach(coin => {
+                if (coin.ws) {
+                    coin.ws.close();
+                }
             });
         });
 
-        // Sayfa kapanırken WebSocket bağlantısını kapat
-        window.addEventListener('beforeunload', function() {
-            if (ws) {
-                ws.close();
-            }
-        });
+        // Global fonksiyon (remove butonları için)
+        window.removeCoin = removeCoin;
     </script>
 </body>
 </html>
