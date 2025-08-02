@@ -547,6 +547,7 @@
                 ws.close();
                 ws = null;
                 updateStatus(false);
+                debugLog('🔌 WebSocket bağlantısı manuel olarak kapatıldı', 'info');
             }
         }
 
@@ -668,7 +669,7 @@
         function updateAllRows() {
             // allFuturesSymbols kontrolü
             if (!allFuturesSymbols || allFuturesSymbols.size === 0) {
-                console.log('allFuturesSymbols henüz hazır değil');
+                debugLog('⚠️ allFuturesSymbols henüz hazır değil', 'warning');
                 return;
             }
             
