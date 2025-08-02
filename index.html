@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kripto Para Fiyat Takibi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+            animation: backgroundShift 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes backgroundShift {
+            0% { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+            100% { background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #ffd700, #ff6b35, #f7931e, #ffd700);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientMove 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            position: relative;
+        }
+
+        @keyframes gradientMove {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .info-box {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto 30px auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            min-height: 80px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .search-container {
+            padding: 20px 0;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1rem;
+            outline: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .search-box::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-box:focus {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 70vh;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        th:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        th.sortable::after {
+            content: ' ↕';
+            opacity: 0.5;
+        }
+
+        th.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+            color: #00ff88;
+        }
+
+        th.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+            color: #ff4757;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.01);
+        }
+
+        .symbol {
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 1.1rem;
+        }
+
+        .price {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .change-positive {
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+
+        .change-negative {
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-top: 2px solid #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .volume {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .funding-rate {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .funding-time {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1000;
+        }
+
+        .connected {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .disconnected {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .info-box {
+                margin-bottom: 20px;
+                padding: 15px;
+                min-height: 60px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">Bağlanıyor...</div>
+    
+    <div class="header">
+        <h1>₿ Futures Kripto Para Takibi ₿</h1>
+    </div>
+
+    <div class="info-box">
+        <!-- Boş kutu -->
+    </div>
+
+    <div class="container">
+        <div class="search-container">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Futures coin ara... (örn: BTC, ETH, DOGE)">
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="symbol">Futures Coin</th>
+                        <th class="sortable" data-sort="price">Fiyat (USDT)</th>
+                        <th class="sortable" data-sort="changeAmount">24s Değişim</th>
+                        <th class="sortable" data-sort="change">24s Değişim %</th>
+                        <th class="sortable" data-sort="fundingRate">Funding Rate</th>
+                        <th class="sortable" data-sort="nextFundingTime">Next Funding</th>
+                        <th class="sortable" data-sort="quoteVolume">24s Hacim</th>
+                    </tr>
+                </thead>
+                <tbody id="cryptoTable">
+                    <tr>
+                        <td colspan="7" class="loading">Futures kripto para verileri yükleniyor</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let cryptoData = {};
+        let filteredData = {};
+        let wsMarkPrice = null;
+        let wsTicker = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        let currentSort = { column: 'fundingRate', direction: 'desc' };
+        let updateThrottle = null;
+        let isUpdating = false;
+
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (status === 'connected') {
+                statusElement.textContent = '🟢 Bağlı (2 Stream)';
+                statusElement.className = 'connection-status connected';
+            } else {
+                statusElement.textContent = '🔴 Bağlantı Kesildi';
+                statusElement.className = 'connection-status disconnected';
+            }
+        }
+
+        function throttledUpdate() {
+            if (isUpdating) return;
+            
+            if (updateThrottle) {
+                clearTimeout(updateThrottle);
+            }
+            
+            updateThrottle = setTimeout(() => {
+                try {
+                    isUpdating = true;
+                    updateTable();
+                } catch (error) {
+                    console.error('Update error:', error);
+                } finally {
+                    isUpdating = false;
+                }
+            }, 100); // 100ms throttle
+        }
+
+        function cleanupConnections() {
+            try {
+                if (wsMarkPrice && wsMarkPrice.readyState === WebSocket.OPEN) {
+                    wsMarkPrice.close();
+                }
+                if (wsTicker && wsTicker.readyState === WebSocket.OPEN) {
+                    wsTicker.close();
+                }
+            } catch (error) {
+                console.error('Cleanup error:', error);
+            }
+            wsMarkPrice = null;
+            wsTicker = null;
+        }
+
+        function connectWebSocket() {
+            try {
+                // Önce mevcut bağlantıları temizle
+                cleanupConnections();
+                
+                // 1. Mark price stream for funding rate data
+                wsMarkPrice = new WebSocket('wss://fstream.binance.com/ws/!markPrice@arr@1s');
+                
+                wsMarkPrice.onopen = function() {
+                    console.log('Mark Price WebSocket bağlantısı kuruldu');
+                    updateConnectionStatus('connected');
+                    reconnectAttempts = 0;
+                };
+
+                wsMarkPrice.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Batch processing - maksimum 50 coin işle
+                        const limitedData = data.slice(0, 50);
+                        
+                        limitedData.forEach(markPrice => {
+                            if (markPrice.s && markPrice.s.endsWith('USDT')) {
+                                if (!cryptoData[markPrice.s]) {
+                                    cryptoData[markPrice.s] = {
+                                        symbol: markPrice.s,
+                                        price: 0,
+                                        change: 0,
+                                        changeAmount: 0,
+                                        volume: 0,
+                                        quoteVolume: 0,
+                                        fundingRate: 0,
+                                        nextFundingTime: 0
+                                    };
+                                }
+                                
+                                // Sadece gerekli alanları güncelle
+                                cryptoData[markPrice.s].price = parseFloat(markPrice.p || 0);
+                                cryptoData[markPrice.s].fundingRate = parseFloat(markPrice.r || 0);
+                                cryptoData[markPrice.s].nextFundingTime = parseInt(markPrice.T || 0);
+                            }
+                        });
+
+                        throttledUpdate();
+                    } catch (error) {
+                        console.error('Mark Price veri işleme hatası:', error);
+                    }
+                };
+
+                wsMarkPrice.onclose = function(event) {
+                    console.log('Mark Price WebSocket kapandı:', event.code);
+                    updateConnectionStatus('disconnected');
+                    
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(() => {
+                            if (!wsMarkPrice || wsMarkPrice.readyState === WebSocket.CLOSED) {
+                                connectWebSocket();
+                            }
+                        }, 5000);
+                    }
+                };
+
+                wsMarkPrice.onerror = function(error) {
+                    console.error('Mark Price WebSocket hatası:', error);
+                };
+
+                // 2. 24hr ticker stream for price change data (daha az sıklıkta)
+                setTimeout(() => {
+                    try {
+                        wsTicker = new WebSocket('wss://fstream.binance.com/ws/!ticker@arr');
+                        
+                        wsTicker.onopen = function() {
+                            console.log('Ticker WebSocket bağlantısı kuruldu');
+                        };
+
+                        wsTicker.onmessage = function(event) {
+                            try {
+                                const data = JSON.parse(event.data);
+                                
+                                // Batch processing - maksimum 50 coin işle
+                                const limitedData = data.slice(0, 50);
+                                
+                                limitedData.forEach(ticker => {
+                                    if (ticker.s && ticker.s.endsWith('USDT') && cryptoData[ticker.s]) {
+                                        // Sadece mevcut coinleri güncelle
+                                        cryptoData[ticker.s].change = parseFloat(ticker.P || 0);
+                                        cryptoData[ticker.s].changeAmount = parseFloat(ticker.p || 0);
+                                        cryptoData[ticker.s].volume = parseFloat(ticker.v || 0);
+                                        cryptoData[ticker.s].quoteVolume = parseFloat(ticker.q || 0);
+                                    }
+                                });
+
+                                // Ticker için daha az güncelleme
+                                setTimeout(throttledUpdate, 500);
+                            } catch (error) {
+                                console.error('Ticker veri işleme hatası:', error);
+                            }
+                        };
+
+                        wsTicker.onclose = function(event) {
+                            console.log('Ticker WebSocket kapandı:', event.code);
+                        };
+
+                        wsTicker.onerror = function(error) {
+                            console.error('Ticker WebSocket hatası:', error);
+                        };
+                    } catch (error) {
+                        console.error('Ticker WebSocket bağlantı hatası:', error);
+                    }
+                }, 2000); // Mark price'dan 2 saniye sonra başlat
+
+            } catch (error) {
+                console.error('WebSocket bağlantı hatası:', error);
+                updateConnectionStatus('disconnected');
+            }
+        }
+
+        function formatPrice(price) {
+            if (price >= 1) {
+                return price.toFixed(2);
+            } else if (price >= 0.01) {
+                return price.toFixed(4);
+            } else {
+                return price.toFixed(8);
+            }
+        }
+
+        function formatNumber(num) {
+            if (num >= 1e9) {
+                return (num / 1e9).toFixed(2) + 'B';
+            } else if (num >= 1e6) {
+                return (num / 1e6).toFixed(2) + 'M';
+            } else if (num >= 1e3) {
+                return (num / 1e3).toFixed(2) + 'K';
+            }
+            return num.toFixed(2);
+        }
+
+        function sortData(column) {
+            currentSort.column = column;
+            
+            // Sıralama okları güncelle
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            const currentTh = document.querySelector(`th[data-sort="${column}"]`);
+            currentTh.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+
+            applySorting();
+        }
+
+        function applySorting() {
+            filteredData.sort((a, b) => {
+                let aVal = a[currentSort.column];
+                let bVal = b[currentSort.column];
+                
+                if (currentSort.column === 'symbol') {
+                    aVal = aVal.replace('USDT', '');
+                    bVal = bVal.replace('USDT', '');
+                }
+                
+                if (typeof aVal === 'string') {
+                    return currentSort.direction === 'asc' ? 
+                        aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                }
+                
+                return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+            });
+
+            renderTable();
+        }
+
+        function updateTable() {
+            const searchTerm = document.getElementById('searchBox').value.toUpperCase();
+            
+            // Filtreleme
+            filteredData = Object.values(cryptoData).filter(coin => 
+                coin.symbol.includes(searchTerm)
+            );
+
+            // Mevcut sıralamayı uygula
+            applySorting();
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('cryptoTable');
+            
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="loading">Futures veri yükleniyor veya coin bulunamadı</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = filteredData.map(coin => `
+                <tr>
+                    <td class="symbol">${coin.symbol.replace('USDT', '')}</td>
+                    <td class="price">${formatPrice(coin.price)}</td>
+                    <td class="${coin.changeAmount >= 0 ? 'change-positive' : 'change-negative'}">
+                        ${coin.changeAmount >= 0 ? '+' : ''}${coin.changeAmount.toFixed(4)}
+                    </td>
+                    <td class="${coin.change >= 0 ? 'change-positive' : 'change-negative'}">
+                        ${coin.change >= 0 ? '+' : ''}${coin.change.toFixed(2)}%
+                    </td>
+                    <td class="volume">${formatNumber(coin.quoteVolume)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Arama fonksiyonu - throttled
+        let searchTimeout = null;
+        document.getElementById('searchBox').addEventListener('input', function() {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                try {
+                    updateTable();
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
+        // Sütun başlıklarına tıklama olayları
+        document.querySelectorAll('th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                try {
+                    const column = th.dataset.sort;
+                    sortData(column);
+                } catch (error) {
+                    console.error('Sort error:', error);
+                }
+            });
+        });
+
+        // Sayfa yüklendiğinde WebSocket bağlantısını başlat
+        connectWebSocket();
+
+        // Sayfa kapatılırken WebSocket bağlantısını kapat
+        window.addEventListener('beforeunload', function() {
+            try {
+                cleanupConnections();
+                if (updateThrottle) clearTimeout(updateThrottle);
+                if (searchTimeout) clearTimeout(searchTimeout);
+            } catch (error) {
+                console.error('Cleanup error:', error);
+            }
+        });
+
+        // Visibility change event - sayfa gizlenince performansı düşür
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // Sayfa gizli - güncellemeleri yavaşlat
+                isUpdating = true;
+            } else {
+                // Sayfa görünür - normal güncelleme
+                isUpdating = false;
+                throttledUpdate();
+            }
+        });
+
+        // Error handling
+        window.addEventListener('error', function(event) {
+            console.error('Global error:', event.error);
+        });
+
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
+</body>
+</html>
